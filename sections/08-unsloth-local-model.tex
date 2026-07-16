@@ -1,0 +1,144 @@
+\DAsection[Qwen3-0.6B、4-bit 推理、GGUF 与本地 API]{拓展：用 Unsloth 部署本地小模型}
+
+\begin{frame}{8.1 最小本地模型部署路线}{Unsloth 负责加载与导出，推理引擎负责长期提供接口}
+  \centering
+  \begin{tikzpicture}[node distance=2mm]
+    \node[DAflow,minimum width=23mm] (model) {Qwen3 0.6B\\4-bit};
+    \node[DAflow,minimum width=23mm,right=of model] (unsloth) {Unsloth\\加载与验证};
+    \node[DAflow,minimum width=23mm,right=of unsloth] (gguf) {GGUF\\Q4\_K\_M};
+    \node[DAflow,minimum width=23mm,right=of gguf] (server) {llama-server\\本地服务};
+    \node[DAflow,minimum width=23mm,right=of server] (api) {OpenAI API\\应用调用};
+    \draw[DAarrowred] (model) -- (unsloth);
+    \draw[DAarrowred] (unsloth) -- (gguf);
+    \draw[DAarrowred] (gguf) -- (server);
+    \draw[DAarrowred] (server) -- (api);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item 本章只做推理与部署，不展开数据集准备和模型微调。
+    \item 小模型下载快、资源要求低，适合课堂演示、原型和离线功能。
+    \item 模型能力有限，不能把“本地运行”理解为“结果一定可靠”。
+  \end{itemize}
+  \DAsource{Unsloth Docs · Inference \& Deployment}{https://unsloth.ai/docs/basics/inference-and-deployment}
+\end{frame}
+
+\begin{frame}[fragile]{8.2 准备独立运行环境}{演示环境优先 Linux / WSL + NVIDIA GPU}
+  \begin{lstlisting}[language=bash]
+nvidia-smi
+
+uv venv unsloth_env --python 3.12
+source unsloth_env/bin/activate
+
+uv pip install unsloth --torch-backend=auto
+  \end{lstlisting}
+  \begin{itemize}
+    \item 独立虚拟环境避免 PyTorch、CUDA 与训练依赖污染业务项目。
+    \item 本次使用 \DAfile{Qwen3-0.6B} 的 4-bit 版本，并将上下文先设为 2048。
+    \item AMD、Intel、Windows 与其他平台按官方对应安装指南处理。
+  \end{itemize}
+  \DAsource{Unsloth Docs · Install via pip and uv}{https://unsloth.ai/docs/get-started/install/pip-install}
+\end{frame}
+
+\begin{frame}[fragile]{8.3 用 Unsloth 加载小模型}{4-bit 降低显存占用，先验证模型能够运行}
+  \begin{lstlisting}[language=Python]
+from unsloth import FastLanguageModel
+
+model, tokenizer = FastLanguageModel.from_pretrained(
+    model_name = "unsloth/Qwen3-0.6B-unsloth-bnb-4bit",
+    max_seq_length = 2048,
+    dtype = None,
+    load_in_4bit = True,
+)
+
+FastLanguageModel.for_inference(model)
+  \end{lstlisting}
+  \begin{itemize}
+    \item 首次运行会下载模型，磁盘、网络和 Hugging Face 缓存要留出空间。
+    \item \DAcmd{for\_inference} 切换到推理路径，部署脚本中不要遗漏。
+  \end{itemize}
+  \DAsource{Unsloth Docs · Qwen3 Tutorial}{https://unsloth.ai/docs/models/tutorials/qwen3-how-to-run-and-fine-tune}
+\end{frame}
+
+\begin{frame}[fragile]{8.4 先在 Python 中完成一次对话}{Chat Template 必须与模型保持一致}
+  \begin{lstlisting}[language=Python]
+messages = [{"role": "user", "content": "用三句话解释 Docker。"}]
+inputs = tokenizer.apply_chat_template(
+    messages,
+    tokenize = True,
+    add_generation_prompt = True,
+    enable_thinking = False,
+    return_tensors = "pt",
+).to("cuda")
+
+outputs = model.generate(
+    input_ids = inputs,
+    max_new_tokens = 128,
+)
+answer = tokenizer.decode(
+    outputs[0][inputs.shape[-1]:], skip_special_tokens = True,
+)
+print(answer)
+  \end{lstlisting}
+  \DAtagline{先验收}{能稳定完成一轮对话后，再继续导出和启动服务}
+\end{frame}
+
+\begin{frame}[fragile]{8.5 导出为 GGUF}{Q4\_K\_M 在体积、速度和质量之间较均衡}
+  \begin{lstlisting}[language=Python]
+model.save_pretrained_gguf(
+    "qwen3-0.6b-local",
+    tokenizer,
+    quantization_method = "q4_k_m",
+)
+  \end{lstlisting}
+  \begin{itemize}
+    \item GGUF 可以交给 llama.cpp、Ollama、LM Studio 等本地推理工具。
+    \item 导出后仍要保持相同的 Chat Template 与正确的 EOS Token。
+    \item 如果导出时显存不足，可降低保存过程的最大显存使用比例。
+  \end{itemize}
+  \DAsource{Unsloth Docs · Saving to GGUF}{https://unsloth.ai/docs/basics/inference-and-deployment/saving-to-gguf}
+\end{frame}
+
+\begin{frame}[fragile]{8.6 用 llama-server 启动本地接口}{只监听本机地址，再由应用或 Nginx 调用}
+  \begin{lstlisting}[language=bash]
+GGUF=$(find qwen3-0.6b-local -name "*.gguf" | head -1)
+
+./llama.cpp/llama-server \
+  --model "$GGUF" \
+  --alias qwen3-local \
+  --host 127.0.0.1 \
+  --port 8001 \
+  --ctx-size 2048 \
+  --jinja
+  \end{lstlisting}
+  \begin{itemize}
+    \item 提前安装最新版 llama.cpp，并确认 CPU / CUDA / Metal 构建方式。
+    \item \DAfile{127.0.0.1:8001} 不直接暴露公网；需要远程访问时再加鉴权与反向代理。
+    \item \DAcmd{--jinja} 让服务按模型的聊天模板组织消息。
+  \end{itemize}
+  \DAsource{Unsloth Docs · llama-server Endpoint}{https://unsloth.ai/docs/basics/inference-and-deployment/llama-server-and-openai-endpoint}
+\end{frame}
+
+\begin{frame}[fragile]{8.7 用 OpenAI SDK 调用本地模型}{业务代码只需要替换 Base URL 与模型名}
+  \begin{lstlisting}[language=Python,basicstyle=\ttfamily\fontsize{5.0}{5.7}\selectfont]
+from openai import OpenAI
+
+client = OpenAI(
+    base_url = "http://127.0.0.1:8001/v1",
+    api_key = "local-no-key",
+)
+response = client.chat.completions.create(
+    model = "qwen3-local",
+    messages = [{
+        "role": "user",
+        "content": "/no_think\n用三句话解释 Docker。",
+    }],
+    temperature = 0.7,
+)
+print(response.choices[0].message.content)
+  \end{lstlisting}
+  \begin{itemize}
+    \item 验证首 Token 延迟、生成速度、显存 / 内存和中文输出质量。
+    \item 小模型适合低成本、隐私敏感和弱联网场景；复杂任务保留云模型回退。
+  \end{itemize}
+  \DAsource{Unsloth Docs · llama-server Endpoint}{https://unsloth.ai/docs/basics/inference-and-deployment/llama-server-and-openai-endpoint}
+\end{frame}

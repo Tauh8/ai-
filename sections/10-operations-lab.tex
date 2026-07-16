@@ -1,0 +1,224 @@
+\DAsection[日志、排错、备份、更新与恢复]{运维、排错、回滚与课堂实战}
+
+\begin{frame}{10.1 线上故障按层定位}{从用户入口一路追到数据层}
+  \centering
+  \begin{tikzpicture}[node distance=2mm]
+    \node[DAflow,minimum width=18mm] (dns) {DNS};
+    \node[DAflow,minimum width=18mm,right=of dns] (tls) {TLS};
+    \node[DAflow,minimum width=18mm,right=of tls] (nginx) {Nginx};
+    \node[DAflow,minimum width=18mm,right=of nginx] (front) {Frontend};
+    \node[DAflow,minimum width=18mm,right=of front] (api) {API};
+    \node[DAflow,minimum width=18mm,right=of api] (db) {Database};
+    \draw[DAarrowred] (dns) -- (tls);
+    \draw[DAarrowred] (tls) -- (nginx);
+    \draw[DAarrowred] (nginx) -- (front);
+    \draw[DAarrowred] (front) -- (api);
+    \draw[DAarrowred] (api) -- (db);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item 每层都用独立工具验证，找到“第一次失败”的位置。
+    \item 页面报 500 时，从首次失败的层级开始处理。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{10.2 日志分层看什么}{同一请求最好能用 Request ID 串起来}
+  \begin{DAtable}{@{}p{29mm}p{43mm}p{49mm}@{}}
+    \toprule
+    日志层 & 关注字段 & 常见问题 \\
+    \midrule
+    Nginx Access & Host、Path、Status、耗时 & 请求是否到达、慢在哪 \\
+    Nginx Error & upstream、connect、timeout & 502、证书、配置 \\
+    应用日志 & Request ID、用户、异常栈 & 业务错误、第三方 API \\
+    Docker / 进程 & Exit Code、Restart Count & 启动失败、崩溃循环 \\
+    MySQL & 连接、慢查询、磁盘 & 密码、迁移、性能 \\
+    \bottomrule
+  \end{DAtable}
+  \DAtagline{日志纪律}{不记录密码、Token、完整身份证件与模型密钥；生产错误要可行动}
+\end{frame}
+
+\begin{frame}[fragile]{10.3 502 Bad Gateway 决策树}{Nginx 到上游的连接失败}
+  \begin{lstlisting}[language=bash]
+# 1. Is the process/container running?
+docker compose ps
+docker compose logs --tail 200 api
+
+# 2. Is the port listening?
+ss -lntp | grep 8000
+
+# 3. Can the host/proxy reach it?
+curl -i http://127.0.0.1:8000/health
+
+# 4. Is Nginx config valid?
+nginx -t
+  \end{lstlisting}
+  \DAtagline{结论}{本机 curl 都失败，先修应用；本机成功但域名失败，再查 Nginx 与防火墙}
+\end{frame}
+
+\begin{frame}{10.4 404 有三种完全不同的来源}{先看响应内容和 Server Header}
+  \begin{DAtable}{@{}p{31mm}p{42mm}p{49mm}@{}}
+    \toprule
+    现象 & 可能来源 & 修复方向 \\
+    \midrule
+    刷新前端子路由 404 & Nginx 找不到文件 & SPA \DAcmd{try\_files} \\
+    \DAfile{/api} 返回前端 HTML & 路由顺序 / 回退误吞 API & 独立 \DAfile{location /api/} \\
+    FastAPI JSON 404 & 路径被代理改写错误 & 检查尾斜杠与 root path \\
+    静态 JS / CSS 404 & 构建 base path 错 & 检查资源前缀与站点根目录 \\
+    \bottomrule
+  \end{DAtable}
+\end{frame}
+
+\begin{frame}{10.5 数据库连接失败怎么分层}{网络、账号、Schema、迁移}
+  \begin{enumerate}
+    \item 主机名是否正确：容器内用 \DAfile{db}，宿主机进程可能用 \DAfile{127.0.0.1}。
+    \item 端口是否正确，数据库是否真正 Ready。
+    \item 用户、密码、数据库名是否与初始化配置一致。
+    \item 用户是否有目标数据库权限，字符集是否符合项目要求。
+    \item 当前代码需要的迁移是否已执行。
+  \end{enumerate}
+  \DAtagline{容器陷阱}{API 容器里的 \DAfile{localhost:3306} 指向 API 容器自身}
+\end{frame}
+
+\begin{frame}[fragile]{10.6 服务器资源不足的症状}{构建时和运行时的瓶颈不同}
+  \begin{lstlisting}[language=bash]
+free -h
+df -h
+du -sh /var/lib/docker/*
+docker stats
+top
+  \end{lstlisting}
+  \begin{itemize}
+    \item Node 前端构建常见内存峰值；MySQL、模型服务与多 Worker 会长期占内存。
+    \item 磁盘可能被 Docker Image、Build Cache、日志和数据库共同吃满。
+    \item OOM Kill 时应用像“突然消失”，需要查系统日志和容器退出码。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{10.7 备份范围与恢复验证}{数据库、上传文件、配置与证书}
+  \begin{DAtable}{@{}p{29mm}p{45mm}p{48mm}@{}}
+    \toprule
+    对象 & 备份方式 & 恢复验证 \\
+    \midrule
+    MySQL & 定时逻辑备份 + 云快照 & 新库导入并跑关键查询 \\
+    上传文件 & Volume / 目录同步 / 对象存储版本 & 随机抽样文件可打开 \\
+    Compose / Nginx & 进入 Git & 新服务器可复现 \\
+    Env 变量名 & \DAfile{.env.example} + Secret 清单 & 新环境变量齐全 \\
+    证书 & 可自动重新签发为主 & 续签任务与域名验证可用 \\
+    \bottomrule
+  \end{DAtable}
+  \DAtagline{3-2-1}{重要数据至少 3 份、2 种介质、1 份异地；课堂项目也要养成习惯}
+\end{frame}
+
+\begin{frame}{10.8 单机部署的安全基线}{默认拒绝，按需开放}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item SSH 使用密钥，限制 root 登录
+        \item 面板入口限制来源并启用 HTTPS
+        \item 公网只开放 22 / 80 / 443
+        \item MySQL、Redis、API 端口不暴露公网
+        \item 运行进程使用非 root 用户
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item 系统与依赖定期更新
+        \item Secret 最小权限并定期轮换
+        \item 数据库与上传文件定期备份
+        \item 日志与磁盘空间设告警
+        \item 删除离职成员与过期 Deploy Key
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \DAtagline{现实边界}{一台服务器适合小型项目和教学；业务增长后再拆数据库、对象存储与负载均衡}
+\end{frame}
+
+\begin{frame}{10.9 一次规范发布包含哪些阶段}{发布前、中、后都要有证据}
+  \begin{DAtable}{@{}p{23mm}p{94mm}@{}}
+    \toprule
+    阶段 & 动作 \\
+    \midrule
+    准备 & 分支已合并、测试通过、记录版本、备份、确认回滚点 \\
+    构建 & 锁文件安装、生产构建、镜像打 Tag、扫描敏感信息 \\
+    迁移 & 执行兼容性数据库迁移，失败则停止 \\
+    发布 & 重启 / 替换进程或容器，保持变更范围最小 \\
+    验证 & Health、首页、登录、数据库、关键 API、日志 \\
+    观察 & 错误率、响应时间、资源、用户反馈 \\
+    收尾 & 记录结果，删除临时权限，更新变更日志 \\
+    \bottomrule
+  \end{DAtable}
+\end{frame}
+
+\begin{frame}{10.10 回滚触发条件}{提前定义阈值与决策人}
+  \begin{itemize}
+    \item 健康检查持续失败，服务无法启动。
+    \item 登录、支付、核心对话等关键链路不可用。
+    \item 错误率或响应时间明显超过基线。
+    \item 数据写入异常、权限越权、Secret 泄漏等安全事件。
+    \item 修复时间不可控，继续在线排查会扩大影响。
+  \end{itemize}
+  \DAtagline{决策原则}{先恢复服务，再分析根因；回滚本身也需要验证与记录}
+\end{frame}
+
+\begin{frame}{10.11 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
+  \centering
+  \begin{tikzpicture}[node distance=2mm]
+    \node[DAflow,minimum width=18mm] (push) {Push / 合并};
+    \node[DAflow,minimum width=18mm,right=of push] (ci) {CI\\Lint + Test};
+    \node[DAflow,minimum width=18mm,right=of ci] (build) {Build\\Image + SHA};
+    \node[DAflow,minimum width=18mm,right=of build] (registry) {Registry\\镜像};
+    \node[DAflow,minimum width=18mm,right=of registry] (deploy) {Deploy\\Pull + Up};
+    \node[DAflow,minimum width=18mm,right=of deploy] (verify) {Verify\\Smoke};
+    \draw[DAarrowred] (push) -- (ci);
+    \draw[DAarrowred] (ci) -- (build);
+    \draw[DAarrowred] (build) -- (registry);
+    \draw[DAarrowred] (registry) -- (deploy);
+    \draw[DAarrowred] (deploy) -- (verify);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item 自动化把已验证的 SOP 固化为可重复流程。
+    \item CI 使用与本地一致的 pnpm / uv 版本与锁文件策略。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{10.12 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
+  \begin{enumerate}
+    \item 确认上线前修复已经合并到主分支。
+    \item 购买服务器后，完成宝塔基础环境配置。
+    \item 选择宝塔手工路线或 Docker Compose 路线部署。
+    \item 配置域名、\DAfile{/api} 反向代理与 SSL。
+    \item 另一组使用手机网络访问并完成关键流程测试。
+    \item 主动制造一次错误端口，按日志定位并恢复。
+    \item 更新一个版本，再回滚到上一个版本。
+  \end{enumerate}
+\end{frame}
+
+\begin{frame}{10.13 官方参考资料 · 协作、Docker 与本地模型}
+  \scriptsize
+  \begin{itemize}
+    \item \href{https://git-scm.com/book/en/v2}{Pro Git Book · Git 基础与分支}
+    \item \href{https://docs.github.com/en/get-started/using-github/github-flow}{GitHub Docs · GitHub Flow}
+    \item \href{https://docs.docker.com/compose/}{Docker Docs · Compose}
+    \item \href{https://pnpm.io/docker}{pnpm Docs · Working with Docker}
+    \item \href{https://docs.astral.sh/uv/guides/integration/docker/}{uv Docs · Using uv in Docker}
+    \item \href{https://unsloth.ai/docs/get-started/install/pip-install}{Unsloth Docs · Install via pip and uv}
+    \item \href{https://unsloth.ai/docs/basics/inference-and-deployment/saving-to-gguf}{Unsloth Docs · Saving to GGUF}
+    \item \href{https://unsloth.ai/docs/basics/inference-and-deployment/llama-server-and-openai-endpoint}{Unsloth Docs · llama-server Endpoint}
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{10.14 官方参考资料 · 宝塔、网络与 HTTPS}
+  \scriptsize
+  \begin{itemize}
+    \item \href{https://docs.bt.cn/}{宝塔面板官方文档}
+    \item \href{https://docs.bt.cn/user-guide/site/php/site-config/reverse-proxy}{宝塔 · 反向代理}
+    \item \href{https://docs.bt.cn/getting-started/deploy-ssl}{宝塔 · 部署 SSL 证书}
+    \item \href{https://docs.bt.cn/practical-tutorials/nodejs-pm2-deployment}{宝塔 · Node.js PM2 部署}
+    \item \href{https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/}{NGINX Docs · Reverse Proxy}
+    \item \href{https://developers.cloudflare.com/dns/}{Cloudflare Docs · DNS}
+    \item \href{https://letsencrypt.org/how-it-works/}{Let's Encrypt · How It Works}
+    \item \href{https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content}{MDN · Mixed Content}
+    \item \href{https://www.miit.gov.cn/}{工业和信息化部 · 互联网信息服务备案相关规定}
+  \end{itemize}
+\end{frame}
