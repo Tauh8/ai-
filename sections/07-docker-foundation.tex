@@ -8,31 +8,31 @@
 \end{frame}
 
 \begin{frame}[fragile]{7.2 Claude Code：准备 Docker 部署}{一段可直接复制的专业提示词}
-  \begin{lstlisting}[basicstyle=\ttfamily\fontsize{4.9}{5.7}\selectfont]
+  \begin{lstlisting}[basicstyle=\ttfamily\fontsize{4.4}{4.85}\selectfont]
 你是资深 DevOps 工程师。请先扫描当前仓库，再为生产服务器准备 Docker 部署。
 
 已知技术栈：
 - 前端：Node.js + pnpm；判断是静态构建还是 Next.js / Node SSR。
 - 后端：Python FastAPI + uv，必须遵循 pyproject.toml 与 uv.lock。
-- 数据库：MySQL；公网入口由 Nginx 提供，同域 /api 转发后端。
-
+- 数据库：MySQL 8.4；公网入口由 Nginx 提供，同域 /api 转发后端。
 请按顺序完成：
 1. 检查目录、构建脚本、启动命令、端口、环境变量、迁移、健康检查和上传目录。
 2. 先输出部署拓扑、假设、风险与将要新增/修改的文件，然后直接实现。
 3. 为每个服务创建生产级 Dockerfile：多阶段构建、锁文件安装、最小运行镜像。
 4. 创建 .dockerignore，排除 .git、.env、依赖、缓存、构建物和本地虚拟环境。
-5. 创建 compose.yaml：frontend、api、db、healthcheck、restart、内部 network、
-   MySQL named volume；只把网关绑定到宿主机 127.0.0.1。
+5. 创建 compose.yaml：frontend、api、db（镜像固定 mysql:8.4）、healthcheck、
+   restart、内部 network；将 MySQL /var/lib/mysql 挂载到 named volume；
+   只把网关绑定到宿主机 127.0.0.1。
 6. 创建 Nginx 配置：SPA fallback 或 SSR 反代、/api、代理头、WebSocket / SSE。
 7. 创建 .env.example，只保留变量名和安全示例，禁止写入任何真实 Secret。
 8. 提供数据库迁移、启动、日志、健康检查、更新、备份与回滚命令。
-
 约束：
 - 不猜测缺失的业务信息；会改变架构时先提出问题。
 - 保留现有可用配置，修改前说明原因；不要提交 .env、密码或密钥。
 - 执行 docker compose config，并检查构建命令与服务间连接。
 - 最后汇总文件路径、运行步骤、验证方法、风险和待确认项。
   \end{lstlisting}
+  \DAtagline{数据库选择}{Docker 内 MySQL 适合小型项目；重要生产数据优先使用云数据库}
 \end{frame}
 
 \begin{frame}[fragile]{7.3 最小 Dockerfile 读法}{每条指令都在描述镜像构建过程}
@@ -71,27 +71,7 @@ CMD ["python", "-m", "uvicorn", "app.main:app",
   \DAtagline{常见错误}{先 \DAcmd{COPY . .} 再安装依赖，任何源码变化都会让依赖层缓存失效}
 \end{frame}
 
-\begin{frame}[fragile]{7.5 .dockerignore 控制构建上下文}{缩小构建上下文并排除敏感文件}
-  \begin{lstlisting}
-.git
-.env
-node_modules
-.pnpm-store
-dist
-.next
-.venv
-__pycache__
-*.log
-coverage
-  \end{lstlisting}
-  \begin{itemize}
-    \item Docker 构建只应该接收生成镜像所需的文件。
-    \item 即使 Dockerfile 没有 COPY 某文件，发送巨大构建上下文仍会拖慢构建。
-    \item \DAfile{.env}、私钥和本地虚拟环境必须排除。
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{7.6 Build、Run、Port 三个动作}{左边是宿主机端口，右边是容器端口}
+\begin{frame}[fragile]{7.5 Build、Run、Port 三个动作}{左边是宿主机端口，右边是容器端口}
   \begin{lstlisting}[language=bash]
 docker build -t customer-api:1.0 .
 
@@ -108,7 +88,7 @@ docker run -d \
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{7.7 容器排错的四个命令}{状态、日志、进程内检查、配置}
+\begin{frame}[fragile]{7.6 容器排错的四个命令}{状态、日志、进程内检查、配置}
   \begin{lstlisting}[language=bash]
 docker ps -a
 docker logs --tail 200 -f customer-api
@@ -122,22 +102,7 @@ docker inspect customer-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}{7.8 Volume 解决数据持久化}{容器可替换，数据必须保留}
-  \begin{DAtable}{@{}p{31mm}p{40mm}p{51mm}@{}}
-    \toprule
-    数据 & 是否放镜像 & 推荐位置 \\
-    \midrule
-    应用源码 / 构建物 & 是 & Image 只读层 \\
-    MySQL 数据目录 & 否 & Named Volume / 云数据库 \\
-    用户上传文件 & 否 & Volume / 对象存储 \\
-    日志 & 通常否 & 标准输出 + 日志平台 / 受控目录 \\
-    Secret & 否 & 环境变量 / Secret 文件 \\
-    \bottomrule
-  \end{DAtable}
-  \DAtagline{设计原则}{应用容器应尽量无状态，方便重建、替换和横向扩展}
-\end{frame}
-
-\begin{frame}{7.9 Docker Network 让服务用名字互访}{Compose 会为项目创建默认网络}
+\begin{frame}{7.7 Docker Network 让服务用名字互访}{Compose 会为项目创建默认网络}
   \centering
   \begin{tikzpicture}[node distance=9mm]
     \node[DAflow,minimum width=31mm] (frontend) {frontend\\Nginx};
@@ -154,23 +119,7 @@ docker inspect customer-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}{7.10 Healthcheck 与 restart}{分别负责健康判断与重启策略}
-  \begin{DAtable}{@{}p{29mm}p{43mm}p{50mm}@{}}
-    \toprule
-    机制 & 判断对象 & 用途 \\
-    \midrule
-    restart policy & 主进程是否退出 & 崩溃或重启服务器后恢复容器 \\
-    healthcheck & 应用是否能响应 & 标记 unhealthy、辅助依赖与监控 \\
-    readiness & 是否可接流量 & 大型编排平台控制流量进入 \\
-    \bottomrule
-  \end{DAtable}
-  \begin{itemize}
-    \item 健康检查应快速、稳定，不执行昂贵业务。
-    \item 可检查应用事件循环、关键依赖连接，但避免产生副作用。
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{7.11 Docker Compose 管理多容器应用}{一份 YAML 描述服务、网络、卷与配置}
+\begin{frame}[fragile]{7.8 Docker Compose 管理多容器应用}{一份 YAML 描述服务、网络、卷与配置}
   \begin{lstlisting}[language=bash]
 docker compose config
 docker compose build

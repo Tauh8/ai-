@@ -1,6 +1,6 @@
 \DAsection[域名找服务器，Nginx 分流，证书建立信任]{域名、反向代理与 SSL 证书}
 
-\begin{frame}{9.1 A 记录与 CNAME 记录}{一个指向 IP，一个指向另一个主机名}
+\begin{frame}{8.1 A 记录与 CNAME 记录}{一个指向 IP，一个指向另一个主机名}
   \begin{DAtable*}{@{}p{22mm}p{38mm}p{57mm}@{}}
     \toprule
     类型 & 示例 & 适用 \\
@@ -18,7 +18,7 @@
   \DAsource{Cloudflare DNS Docs · Record examples}{https://developers.cloudflare.com/dns/zone-setups/reference/dns-quick-scan/}
 \end{frame}
 
-\begin{frame}[fragile]{9.2 用 dig 验证 DNS}{同时检查 Host Header 与站点匹配}
+\begin{frame}[fragile]{8.2 用 dig 验证 DNS}{同时检查 Host Header 与站点匹配}
   \begin{lstlisting}[language=bash]
 dig +short app.example.com
 dig app.example.com A
@@ -34,7 +34,7 @@ curl -I http://203.0.113.10 \
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.3 一个域名如何承载前后端}{推荐同域 + 路径分流}
+\begin{frame}{8.3 一个域名如何承载前后端}{推荐同域 + 路径分流}
   \begin{DAtable}{@{}p{31mm}p{41mm}p{46mm}@{}}
     \toprule
     方案 & 示例 & 特点 \\
@@ -48,7 +48,7 @@ curl -I http://203.0.113.10 \
   {\small\textcolor{DARed}{\bfseries 统一入口：}用户只访问 443，应用真实端口留在内部。}
 \end{frame}
 
-\begin{frame}[fragile]{9.4 代理头传递外部请求信息}{协议、域名与客户端 IP}
+\begin{frame}[fragile]{8.4 代理头传递外部请求信息}{协议、域名与客户端 IP}
   \begin{lstlisting}[language=bash]
 proxy_set_header Host $host;
 proxy_set_header X-Real-IP $remote_addr;
@@ -63,7 +63,7 @@ proxy_set_header X-Forwarded-Proto $scheme;
   \DAsource{FastAPI Docs · Behind a Proxy}{https://fastapi.tiangolo.com/advanced/behind-a-proxy/}
 \end{frame}
 
-\begin{frame}[fragile]{9.5 WebSocket 与 SSE 代理配置}{AI 流式输出的超时与缓冲}
+\begin{frame}[fragile]{8.5 WebSocket 与 SSE 代理配置}{AI 流式输出的超时与缓冲}
   \begin{lstlisting}[language=bash]
 # WebSocket
 proxy_http_version 1.1;
@@ -81,7 +81,7 @@ proxy_read_timeout 3600s;
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.6 Let's Encrypt / ACME 自动签发}{验证域名控制权并定期续期}
+\begin{frame}{8.6 Let's Encrypt / ACME 自动签发}{验证域名控制权并定期续期}
   \begin{columns}[T]
     \begin{column}{0.44\textwidth}
       \begin{enumerate}
@@ -100,7 +100,7 @@ proxy_read_timeout 3600s;
   \DAsource{Let's Encrypt · How It Works}{https://letsencrypt.org/how-it-works/}
 \end{frame}
 
-\begin{frame}{9.7 HTTP-01 与 DNS-01 怎么选}{课堂单域名优先 HTTP-01}
+\begin{frame}{8.7 HTTP-01 与 DNS-01 怎么选}{课堂单域名优先 HTTP-01}
   \begin{DAtable}{@{}p{25mm}p{44mm}p{51mm}@{}}
     \toprule
     验证方式 & 要求 & 适用 \\
@@ -115,7 +115,7 @@ proxy_read_timeout 3600s;
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.8 宝塔申请与部署 SSL}{站点设置中完成申请、安装与续签}
+\begin{frame}{8.8 宝塔申请与部署 SSL}{站点设置中完成申请、安装与续签}
   \begin{columns}[T]
     \begin{column}{0.50\textwidth}
       \centering
@@ -133,7 +133,7 @@ proxy_read_timeout 3600s;
   \DAsource{宝塔官方文档 · 部署 SSL 证书}{https://docs.bt.cn/getting-started/deploy-ssl}
 \end{frame}
 
-\begin{frame}[fragile]{9.9 HTTP 跳转 HTTPS}{80 端口保留验证与重定向}
+\begin{frame}[fragile]{8.9 HTTP 跳转 HTTPS}{80 端口保留验证与重定向}
   \begin{lstlisting}[language=bash]
 server {
     listen 80;
@@ -154,7 +154,7 @@ server {
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.10 Mixed Content 排错}{HTTPS 页面中的 HTTP 请求会被拦截}
+\begin{frame}{8.10 Mixed Content 排错}{HTTPS 页面中的 HTTP 请求会被拦截}
   \begin{alertblock}{典型错误}
     页面是 \DAfile{https://app.example.com}，前端仍请求 \DAfile{http://203.0.113.10:8000/api}。
   \end{alertblock}
@@ -166,7 +166,7 @@ server {
   \DAsource{MDN · Mixed content}{https://developer.mozilla.org/en-US/docs/Web/Security/Defenses/Mixed_content}
 \end{frame}
 
-\begin{frame}{9.11 CORS 配置}{浏览器对跨 Origin 请求的约束}
+\begin{frame}{8.11 CORS 配置}{浏览器对跨 Origin 请求的约束}
   \begin{DAtable*}{@{}p{35mm}p{80mm}@{}}
     \toprule
     场景 & 处理 \\
@@ -180,7 +180,7 @@ server {
   \DAtagline{安全边界}{CORS 不能替代后端鉴权；攻击者可以不用浏览器直接请求 API}
 \end{frame}
 
-\begin{frame}[fragile]{9.12 上线后验证域名与证书}{检查跳转、证书、接口和安全头}
+\begin{frame}[fragile]{8.12 上线后验证域名与证书}{检查跳转、证书、接口和安全头}
   \begin{lstlisting}[language=bash]
 curl -I http://app.example.com
 curl -I https://app.example.com
@@ -197,7 +197,7 @@ openssl x509 -noout -subject -issuer -dates
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.13 证书续签与 HSTS}{自动续签、到期提醒与安全策略}
+\begin{frame}{8.13 证书续签与 HSTS}{自动续签、到期提醒与安全策略}
   \begin{itemize}
     \item 免费证书通常周期较短，依赖自动续签；开启到期提醒。
     \item 续签失败常见原因：DNS 已切换、80 被关闭、验证路径被代理、DNS Token 失效。

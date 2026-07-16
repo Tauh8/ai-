@@ -1,6 +1,6 @@
 # Day 5：Git 团队协作与全栈应用部署
 
-这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 106 个 PDF 页面、10 个章节。内容从 Git 本地模型和小团队开发流程开始，依次讲解冲突处理、主分支治理、服务器配置、宝塔部署、Docker / Compose、Node 前端、FastAPI 后端、Node 后端、域名、反向代理、SSL 与上线运维。
+这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 86 个 PDF 页面、9 个章节。内容从 Git 本地模型和小团队开发流程开始，依次讲解冲突处理、主分支治理、服务器配置、宝塔部署、Docker 基础、域名、反向代理、SSL 与上线运维。
 
 ## 两种输出
 
@@ -25,9 +25,8 @@ latexmk -xelatex -interaction=nonstopmode -halt-on-error main-ppt.tex
 5. 服务器购买与部署架构
 6. 通过宝塔部署全栈项目
 7. Docker 基础与部署模型
-8. Docker 部署 Node 前端与 FastAPI
-9. 域名、反向代理与 SSL 证书
-10. 运维、排错、回滚与课堂实战
+8. 域名、反向代理与 SSL 证书
+9. 运维、排错、回滚与课堂实战
 
 服务器购买页位于 PDF 第 33 页（5.1）。
 
@@ -38,7 +37,7 @@ main.tex                 放映版入口
 main-ppt.tex             PPT 转换友好版入口
 common.tex               两个版本共享的字体、代码块和绘图配置
 body.tex                 章节入口
-sections/                10 个章节的正文
+sections/                9 个章节的正文
 assets/official/         GitHub、宝塔、Let's Encrypt 官方素材
 assets/generated/        为课件生成的教学示意图
 beamerthemedragonai.sty  DragonAI Beamer 主题
@@ -54,7 +53,7 @@ check_figs.py            配图分辨率检查
 ## 质量检查
 
 - 放映版与 PPT 转换友好版均已通过 XeLaTeX 编译。
-- 两个版本均为 106 页、16:9。
+- 两个版本均为 86 页、16:9。
 - 编译日志无 Overfull 警告。
 - `python3 check_figs.py main.tex` 检查结果为“全部达标”。
 - 放映版已逐页渲染并完成接触表视觉检查。

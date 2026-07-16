@@ -1,6 +1,6 @@
 \DAsection[日志、排错、备份、更新与恢复]{运维、排错、回滚与课堂实战}
 
-\begin{frame}{10.1 线上故障按层定位}{从用户入口一路追到数据层}
+\begin{frame}{9.1 线上故障按层定位}{从用户入口一路追到数据层}
   \centering
   \begin{tikzpicture}[node distance=2mm]
     \node[DAflow,minimum width=18mm] (dns) {DNS};
@@ -22,7 +22,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{10.2 日志分层看什么}{同一请求最好能用 Request ID 串起来}
+\begin{frame}{9.2 日志分层看什么}{同一请求最好能用 Request ID 串起来}
   \begin{DAtable}{@{}p{29mm}p{43mm}p{49mm}@{}}
     \toprule
     日志层 & 关注字段 & 常见问题 \\
@@ -37,7 +37,7 @@
   \DAtagline{日志纪律}{不记录密码、Token、完整身份证件与模型密钥；生产错误要可行动}
 \end{frame}
 
-\begin{frame}[fragile]{10.3 502 Bad Gateway 决策树}{Nginx 到上游的连接失败}
+\begin{frame}[fragile]{9.3 502 Bad Gateway 决策树}{Nginx 到上游的连接失败}
   \begin{lstlisting}[language=bash]
 # 1. Is the process/container running?
 docker compose ps
@@ -55,7 +55,7 @@ nginx -t
   \DAtagline{结论}{本机 curl 都失败，先修应用；本机成功但域名失败，再查 Nginx 与防火墙}
 \end{frame}
 
-\begin{frame}{10.4 404 有三种完全不同的来源}{先看响应内容和 Server Header}
+\begin{frame}{9.4 404 有三种完全不同的来源}{先看响应内容和 Server Header}
   \begin{DAtable}{@{}p{31mm}p{42mm}p{49mm}@{}}
     \toprule
     现象 & 可能来源 & 修复方向 \\
@@ -68,7 +68,7 @@ nginx -t
   \end{DAtable}
 \end{frame}
 
-\begin{frame}{10.5 数据库连接失败怎么分层}{网络、账号、Schema、迁移}
+\begin{frame}{9.5 数据库连接失败怎么分层}{网络、账号、Schema、迁移}
   \begin{enumerate}
     \item 主机名是否正确：容器内用 \DAfile{db}，宿主机进程可能用 \DAfile{127.0.0.1}。
     \item 端口是否正确，数据库是否真正 Ready。
@@ -79,7 +79,7 @@ nginx -t
   \DAtagline{容器陷阱}{API 容器里的 \DAfile{localhost:3306} 指向 API 容器自身}
 \end{frame}
 
-\begin{frame}[fragile]{10.6 服务器资源不足的症状}{构建时和运行时的瓶颈不同}
+\begin{frame}[fragile]{9.6 服务器资源不足的症状}{构建时和运行时的瓶颈不同}
   \begin{lstlisting}[language=bash]
 free -h
 df -h
@@ -94,7 +94,7 @@ top
   \end{itemize}
 \end{frame}
 
-\begin{frame}{10.7 备份范围与恢复验证}{数据库、上传文件、配置与证书}
+\begin{frame}{9.7 备份范围与恢复验证}{数据库、上传文件、配置与证书}
   \begin{DAtable}{@{}p{29mm}p{45mm}p{48mm}@{}}
     \toprule
     对象 & 备份方式 & 恢复验证 \\
@@ -109,7 +109,7 @@ top
   \DAtagline{3-2-1}{重要数据至少 3 份、2 种介质、1 份异地；课堂项目也要养成习惯}
 \end{frame}
 
-\begin{frame}{10.8 单机部署的安全基线}{默认拒绝，按需开放}
+\begin{frame}{9.8 单机部署的安全基线}{默认拒绝，按需开放}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{itemize}
@@ -133,7 +133,7 @@ top
   \DAtagline{现实边界}{一台服务器适合小型项目和教学；业务增长后再拆数据库、对象存储与负载均衡}
 \end{frame}
 
-\begin{frame}{10.9 一次规范发布包含哪些阶段}{发布前、中、后都要有证据}
+\begin{frame}{9.9 一次规范发布包含哪些阶段}{发布前、中、后都要有证据}
   \begin{DAtable}{@{}p{23mm}p{94mm}@{}}
     \toprule
     阶段 & 动作 \\
@@ -149,7 +149,7 @@ top
   \end{DAtable}
 \end{frame}
 
-\begin{frame}{10.10 回滚触发条件}{提前定义阈值与决策人}
+\begin{frame}{9.10 回滚触发条件}{提前定义阈值与决策人}
   \begin{itemize}
     \item 健康检查持续失败，服务无法启动。
     \item 登录、支付、核心对话等关键链路不可用。
@@ -160,7 +160,7 @@ top
   \DAtagline{决策原则}{先恢复服务，再分析根因；回滚本身也需要验证与记录}
 \end{frame}
 
-\begin{frame}{10.11 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
+\begin{frame}{9.11 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
   \centering
   \begin{tikzpicture}[node distance=2mm]
     \node[DAflow,minimum width=18mm] (push) {Push / 合并};
@@ -182,7 +182,7 @@ top
   \end{itemize}
 \end{frame}
 
-\begin{frame}{10.12 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
+\begin{frame}{9.12 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
   \begin{enumerate}
     \item 确认上线前修复已经合并到主分支。
     \item 购买服务器后，完成宝塔基础环境配置。
@@ -194,7 +194,7 @@ top
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{10.13 官方参考资料 · 协作与运行时}
+\begin{frame}{9.13 官方参考资料 · 协作与运行时}
   \scriptsize
   \begin{itemize}
     \item \href{https://git-scm.com/book/en/v2}{Pro Git Book · Git 基础与分支}
@@ -208,7 +208,7 @@ top
   \end{itemize}
 \end{frame}
 
-\begin{frame}{10.14 官方参考资料 · 宝塔、网络与 HTTPS}
+\begin{frame}{9.14 官方参考资料 · 宝塔、网络与 HTTPS}
   \scriptsize
   \begin{itemize}
     \item \href{https://docs.bt.cn/}{宝塔面板官方文档}
