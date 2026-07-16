@@ -1,0 +1,190 @@
+\DAsection[用 Commit、Branch 与 Diff 管理代码历史]{Git 核心模型与本地工作流}
+
+\begin{frame}{2.1 Git 的三个区域}{工作区、暂存区、仓库}
+  \centering
+  \begin{tikzpicture}[node distance=9mm]
+    \node[DAflow,minimum width=34mm] (work) {Working Tree\\正在编辑的文件};
+    \node[DAflow,minimum width=34mm,right=of work] (stage) {Staging Area\\下一次提交清单};
+    \node[DAflow,minimum width=34mm,right=of stage] (repo) {Local Repository\\Commit 历史};
+    \draw[DAarrowred] (work) -- node[above,font=\tiny]{git add} (stage);
+    \draw[DAarrowred] (stage) -- node[above,font=\tiny]{git commit} (repo);
+    \draw[DAarrow] (stage) to[bend left=22] node[below,font=\tiny]{git restore --staged} (work);
+    \draw[DAarrow] (repo) to[bend left=22] node[below,font=\tiny]{git restore / revert} (work);
+  \end{tikzpicture}
+  \par
+  \begin{itemize}
+    \item \DAcmd{git add} 选择进入下一个 Commit 的变化。
+    \item 一次 Commit 应该表达一个完整、可解释、可回滚的意图。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.2 第一次使用 Git 的身份配置}{作者信息会写入每个 Commit}
+  \begin{lstlisting}[language=bash]
+git config --global user.name "Your Name"
+git config --global user.email "you@example.com"
+
+git config --global init.defaultBranch main
+git config --global --list
+  \end{lstlisting}
+  \begin{itemize}
+    \item 公司与个人账号需要区分时，可在项目目录使用不带 \DAcmd{--global} 的配置。
+    \item 提交邮箱应与 GitHub 账号关联，才能正确显示贡献身份。
+    \item 认证使用 SSH Key 或受控 Token；密码与 Token 留在受控环境。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.3 获取仓库：init 与 clone}{一个创建新历史，一个复制已有历史}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{新项目}
+        \begin{lstlisting}[language=bash]
+mkdir customer-service
+cd customer-service
+git init
+git status
+        \end{lstlisting}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{已有项目}
+        \begin{lstlisting}[language=bash]
+git clone git@github.com:org/app.git
+cd app
+git remote -v
+        \end{lstlisting}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \DAtagline{团队默认}{使用 Clone 获取完整历史与远程仓库配置}
+\end{frame}
+
+\begin{frame}[fragile]{2.4 一次最小提交循环}{先看状态，再选择，再提交}
+  \begin{lstlisting}[language=bash]
+git status
+git diff
+
+git add src/pages/Login.tsx
+git add src/api/auth.ts
+git diff --staged
+
+git commit -m "feat(auth): connect login form to API"
+  \end{lstlisting}
+  \begin{itemize}
+    \item \DAcmd{git diff}：工作区与暂存区的差异。
+    \item \DAcmd{git diff --staged}：暂存区与上一次 Commit 的差异。
+    \item 提交前最后看一次 Diff，能拦住调试代码、密钥和无关格式化。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2.5 好 Commit 的三个标准}{小、完整、能读懂}
+  \begin{DAtable}{@{}p{25mm}p{44mm}p{54mm}@{}}
+    \toprule
+    标准 & 好例子 & 坏例子 \\
+    \midrule
+    单一意图 & 登录表单接 API & 登录 + 首页改版 + 升级依赖 \\
+    可独立验证 & 提交后测试能通过 & 中间状态无法运行 \\
+    信息明确 & \DAfile{fix(api): handle 401} & \DAfile{update} / \DAfile{改一下} \\
+    \bottomrule
+  \end{DAtable}
+  \begin{itemize}
+    \item 常用前缀：\DAfile{feat}、\DAfile{fix}、\DAfile{docs}、\DAfile{refactor}、\DAfile{test}、\DAfile{chore}。
+    \item Commit 是给未来的自己、Review 者和回滚操作看的。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.6 用 log 与 diff 读懂历史}{排错第一步：先知道发生过什么}
+  \begin{lstlisting}[language=bash]
+git log --oneline --graph --decorate --all
+git show <commit>
+git diff main..feature/login
+git blame src/api/auth.ts
+  \end{lstlisting}
+  \begin{itemize}
+    \item \DAcmd{git log --graph} 看分支关系，不只看提交列表。
+    \item \DAcmd{git show} 查看某次提交“为什么改、具体改了什么”。
+    \item \DAcmd{git blame} 用于寻找上下文，不用于追责。
+  \end{itemize}
+  \DAtagline{AI 协作}{让 AI 修改前先提供当前 Diff；让 AI 修复后再审一遍 Diff}
+\end{frame}
+
+\begin{frame}{2.7 分支是什么}{指向某个 Commit 的可移动标签}
+  \centering
+  \begin{tikzpicture}[x=18mm,y=8mm]
+    \node[DAflow,minimum width=18mm] (c1) at (0,0) {C1};
+    \node[DAflow,minimum width=18mm] (c2) at (1,0) {C2};
+    \node[DAflow,minimum width=18mm] (c3) at (2,0) {C3};
+    \node[DAflow,minimum width=18mm] (f1) at (3,1) {F1};
+    \node[DAflow,minimum width=18mm] (f2) at (4,1) {F2};
+    \node[DAflow,minimum width=18mm] (m1) at (3,-1) {M1};
+    \draw[DAarrow] (c1) -- (c2);
+    \draw[DAarrow] (c2) -- (c3);
+    \draw[DAarrowred] (c3) -- (f1);
+    \draw[DAarrowred] (f1) -- (f2);
+    \draw[DAarrow] (c3) -- (m1);
+    \node[font=\scriptsize\bfseries,text=DARed,above=1mm of f2] {feature/login};
+    \node[font=\scriptsize\bfseries,text=DAInk2,below=1mm of m1] {main};
+  \end{tikzpicture}
+  \par
+  \begin{itemize}
+    \item 分支是指向 Commit 的轻量指针。
+    \item 每个任务独立分支，可以并行开发、单独 Review、随时放弃。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.8 分支的日常命令}{从最新 main 开始工作}
+  \begin{lstlisting}[language=bash]
+git switch main
+git pull --ff-only
+
+git switch -c feature/login-api
+# edit, test, commit...
+
+git switch main
+git branch -d feature/login-api
+  \end{lstlisting}
+  \begin{itemize}
+    \item 分支名建议：\DAfile{feature/login-api}、\DAfile{fix/chat-scroll}、\DAfile{docs/deploy-guide}。
+    \item \DAcmd{--ff-only} 避免 \DAcmd{git pull} 意外生成本地合并提交。
+    \item 分支合并后及时删除，避免团队继续在过期分支上工作。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{2.9 本地仓库与远程仓库}{origin 是远程仓库的常用别名}
+  \centering
+  \begin{tikzpicture}[node distance=17mm]
+    \node[DAgroup] (localbox) {
+      \begin{tikzpicture}[node distance=4mm]
+        \node[DAflow,minimum width=28mm] (localmain) {local main};
+        \node[DAflow,minimum width=28mm,below=of localmain] (localfeat) {local feature};
+      \end{tikzpicture}
+    };
+    \node[DAgroup,right=of localbox] (remotebox) {
+      \begin{tikzpicture}[node distance=4mm]
+        \node[DAflow,minimum width=28mm] (originmain) {origin/main};
+        \node[DAflow,minimum width=28mm,below=of originmain] (originfeat) {origin/feature};
+      \end{tikzpicture}
+    };
+    \draw[DAarrowred] (localbox.east) -- node[above,font=\tiny]{push} (remotebox.west);
+    \draw[DAarrow] (remotebox.west) to[bend left=25] node[below,font=\tiny]{fetch / pull} (localbox.east);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item \DAcmd{git fetch} 只更新远程跟踪信息，不修改当前工作区。
+    \item \DAcmd{git pull} = fetch + 整合；团队应明确整合策略。
+    \item \DAcmd{git push -u origin feature/login-api} 首次推送并建立跟踪关系。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{2.10 撤销操作：先判断“是否已经共享”}{公开历史优先 revert，未共享历史才考虑重写}
+  \begin{DAtable*}{@{}p{29mm}p{45mm}p{47mm}@{}}
+    \toprule
+    场景 & 推荐命令 & 影响 \\
+    \midrule
+    未暂存的文件改坏 & \DAcmd{git restore file} & 丢弃本地变化 \\
+    误加入暂存区 & \DAcmd{git restore --staged file} & 保留文件变化 \\
+    最近 Commit 信息错 & \DAcmd{git commit --amend} & 重写未共享提交 \\
+    已推送的错误 Commit & \DAcmd{git revert <commit>} & 新增反向提交，历史安全 \\
+    \bottomrule
+  \end{DAtable*}
+  \DAtagline{红线}{共享分支不执行 \DAcmd{reset --hard} 或普通 \DAcmd{push --force}}
+\end{frame}

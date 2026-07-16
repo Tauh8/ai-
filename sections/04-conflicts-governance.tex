@@ -1,0 +1,125 @@
+\DAsection[读标记、解冲突、保护 main]{冲突处理、Review 与主分支治理}
+
+\begin{frame}[fragile]{4.1 先学会读冲突标记}{当前分支、分隔线、待合并分支}
+  \begin{lstlisting}
+<<<<<<< HEAD
+const apiBase = "/api";
+=======
+const apiBase = "http://localhost:8000";
+>>>>>>> feature/api-config
+  \end{lstlisting}
+  \begin{itemize}
+    \item 先确认生产架构与配置约定，再选择或融合两侧代码。
+    \item 最终结果可能选择一边，也可能融合成第三种写法。
+    \item 删除全部标记后，必须重新运行测试与构建。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{4.2 命令行解决冲突的标准步骤}{定位、编辑、验证、继续}
+  \begin{lstlisting}[language=bash]
+git status
+# open conflicted files and resolve markers
+
+pnpm lint
+pnpm test
+pnpm build
+
+git add src/config/api.ts
+git commit                 # merge workflow
+# or: git rebase --continue
+  \end{lstlisting}
+  \begin{itemize}
+    \item \DAcmd{git status} 会列出所有未合并路径。
+    \item 不确定时可用 \DAcmd{git merge --abort} 或 \DAcmd{git rebase --abort} 回到操作前。
+    \item 解决冲突时必须理解两边业务意图。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{4.3 GitHub 在线解决简单行冲突}{复杂冲突回到本地测试}
+  \centering
+  \DAframed{\includegraphics[width=119mm]{assets/official/github-conflict-editor.png}}
+  \begin{itemize}
+    \item 简单的竞争行可以使用网页冲突编辑器。
+    \item 删除 / 重命名、生成文件、依赖锁文件等复杂冲突建议本地处理。
+    \item 合并前必须验证构建、测试和关键业务流程。
+  \end{itemize}
+  \DAsource{GitHub Docs · Resolving a merge conflict}{https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/addressing-merge-conflicts/resolving-a-merge-conflict-on-github}
+\end{frame}
+
+\begin{frame}{4.4 如何减少冲突}{重点是工作拆分、同步和接口约定}
+  \begin{DAtable}{@{}p{35mm}p{82mm}@{}}
+    \toprule
+    做法 & 原理 \\
+    \midrule
+    小任务、小 PR & 缩短分支生命周期和重叠面积 \\
+    明确模块负责人 & 减少多人同时改同一核心文件 \\
+    频繁同步 main & 尽早暴露竞争变化 \\
+    格式化单独提交 & 避免真实逻辑变化被噪声淹没 \\
+    先沟通公共接口 & Schema、路由、配置文件先约定再编码 \\
+    锁文件由实际安装命令生成 & 不手工编辑 \DAfile{pnpm-lock.yaml} / \DAfile{uv.lock} \\
+    \bottomrule
+  \end{DAtable}
+\end{frame}
+
+\begin{frame}{4.5 Rebase 为什么需要谨慎}{它会把 Commit 复制到新的父节点上}
+  \centering
+  \begin{tikzpicture}[x=18mm,y=10mm]
+    \node[DAflow,minimum width=16mm] (a) at (0,0) {A};
+    \node[DAflow,minimum width=16mm] (b) at (1,0) {B};
+    \node[DAflow,minimum width=16mm] (c) at (2,0) {C};
+    \node[DAflow,minimum width=16mm] (d) at (3,0) {D};
+    \node[DAflow,minimum width=16mm] (f1) at (2,1.2) {F1};
+    \node[DAflow,minimum width=16mm] (f2) at (3,1.2) {F2};
+    \node[DAflow,minimum width=16mm] (f1p) at (4,0) {F1'};
+    \node[DAflow,minimum width=16mm] (f2p) at (5,0) {F2'};
+    \draw[DAarrow] (a) -- (b);
+    \draw[DAarrow] (b) -- (c);
+    \draw[DAarrow] (c) -- (d);
+    \draw[DAarrowred] (b) -- (f1);
+    \draw[DAarrowred] (f1) -- (f2);
+    \draw[DAarrowred] (d) -- (f1p);
+    \draw[DAarrowred] (f1p) -- (f2p);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item Rebase 后 F1/F2 变成新的 F1'/F2'，Commit ID 改变。
+    \item 只重写自己的功能分支；共享历史保持稳定。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}[fragile]{4.6 Rebase 后推送用 force-with-lease}{它会检查远程分支是否被别人更新}
+  \begin{lstlisting}[language=bash]
+git fetch origin
+git rebase origin/main
+
+git push --force-with-lease
+  \end{lstlisting}
+  \begin{alertblock}{禁止使用}
+    \DAcmd{git push --force} 可能覆盖同事刚推送的 Commit。
+  \end{alertblock}
+  \DAtagline{边界}{如果团队尚未理解历史重写，统一用 Merge 同步 main 更安全}
+\end{frame}
+
+\begin{frame}{4.7 主分支保护规则}{main 始终代表“可部署版本”}
+  \begin{itemize}
+    \item 禁止直接 Push，所有变化通过 Pull Request。
+    \item 至少一人 Approve，关键目录可配置 CODEOWNERS。
+    \item 必须通过构建、测试、Lint 等状态检查。
+    \item 必须解决 Review 对话后才能合并。
+    \item 默认禁止 Force Push 与删除主分支。
+  \end{itemize}
+  \DAtagline{结果}{规则把“团队口头约定”变成平台自动执行的门禁}
+  \DAsource{GitHub Docs · About protected branches}{https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches}
+\end{frame}
+
+\begin{frame}{4.8 Git 协作现场练习}{两人一组完成一次真实 PR}
+  \begin{enumerate}
+    \item A 创建 Issue：“健康检查页展示后端版本”。
+    \item B 从最新 main 建 \DAfile{feature/version-card}，完成修改并推送。
+    \item B 发 Draft PR，附页面截图和 API 响应。
+    \item A Review 并提出一条可执行修改意见。
+    \item B 新增 Commit 修复，A Approve，Squash merge。
+    \item 双方同步 main，验证本地历史与页面。
+  \end{enumerate}
+  \DAtagline{现场产物}{Issue、分支、Commit、PR Review 与合并记录}
+\end{frame}

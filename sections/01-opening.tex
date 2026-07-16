@@ -1,0 +1,51 @@
+\DAsection[Git 协作、服务器部署、域名与 HTTPS]{开场与课程主线}
+
+\begin{frame}{1.1 今天只讲两条主线}{Git 团队协作 + 全栈应用部署}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{主线 A · Git 协作}
+        \begin{itemize}
+          \item 用分支隔离任务
+          \item 用 Commit 记录可解释的变化
+          \item 用 Pull Request 完成讨论、检查与合并
+          \item 用规则保护主分支
+        \end{itemize}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{主线 B · 公网部署}
+        \begin{itemize}
+          \item 服务器持续运行进程
+          \item Nginx 接住公网请求
+          \item 宝塔或 Docker 管理应用
+          \item 域名 + SSL 提供可信入口
+        \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \DAtagline{贯穿项目}{Node 技术栈前端 + Python FastAPI 后端 + MySQL，可替换为 Node 后端}
+\end{frame}
+
+\begin{frame}{1.2 演示项目与部署结构}{Node 前端 + FastAPI 后端 + MySQL}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \item \textbf{前端}：Vite / React / Vue 等 Node 技术栈
+        \item \textbf{包管理}：pnpm + \DAfile{pnpm-lock.yaml}
+        \item \textbf{后端}：FastAPI + uv + \DAfile{uv.lock}
+        \item \textbf{数据}：MySQL，生产环境不暴露公网端口
+        \item \textbf{入口}：\DAfile{/} 访问前端，\DAfile{/api} 访问后端
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \centering
+      \begin{tikzpicture}[node distance=3mm]
+        \node[DAflow,minimum width=34mm] (browser) {Browser\\app.example.com};
+        \node[DAflow,minimum width=34mm,below=of browser] (nginx) {Nginx\\静态文件 + 反代};
+        \node[DAflow,minimum width=42mm,below=of nginx] (app) {前端 dist / SSR\\FastAPI \(\rightarrow\) MySQL};
+        \draw[DAarrowred] (browser) -- (nginx);
+        \draw[DAarrow] (nginx) -- node[right,font=\tiny]{/ 与 /api} (app);
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
