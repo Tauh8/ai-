@@ -1,25 +1,41 @@
 \DAsection[镜像、容器、网络、卷与 Compose]{Docker 基础与部署模型}
 
-\begin{frame}{7.1 Image 与 Container}{镜像是静态模板，容器是运行实例}
+\begin{frame}{7.1 Docker 核心部件的关系}{Dockerfile、Image、Container、Registry、Volume 与 Network}
   \centering
-  \begin{tikzpicture}[node distance=12mm]
-    \node[DAflow,minimum width=34mm] (dockerfile) {Dockerfile\\构建说明};
-    \node[DAflow,minimum width=34mm,right=of dockerfile] (image) {Image\\只读层 + 元数据};
-    \node[DAflow,minimum width=34mm,right=of image] (container1) {Container A\\运行进程};
-    \node[DAflow,minimum width=34mm,below=6mm of container1] (container2) {Container B\\另一个实例};
-    \draw[DAarrowred] (dockerfile) -- node[above,font=\tiny]{docker build} (image);
-    \draw[DAarrowred] (image) -- node[above,font=\tiny]{docker run} (container1);
-    \draw[DAarrowred] (image) -- (container2);
-  \end{tikzpicture}
-  \par\medskip
-  \begin{itemize}
-    \item 容器的主进程退出，容器就停止。
-    \item 容器内临时写入不会进入镜像，也不会自动持久化。
-  \end{itemize}
-  \DAsource{FastAPI Docs · What is a Container}{https://fastapi.tiangolo.com/deployment/docker/}
+  \includegraphics[height=45mm]{assets/generated/docker-components-relationship.png}
+  \par\smallskip
+  {\scriptsize\textcolor{DAInk2}{同一 Image 可启动多个 Container；Volume 保存数据，Network 负责容器通信。}}
 \end{frame}
 
-\begin{frame}[fragile]{7.2 最小 Dockerfile 读法}{每条指令都在描述镜像构建过程}
+\begin{frame}[fragile]{7.2 Claude Code：准备 Docker 部署}{一段可直接复制的专业提示词}
+  \begin{lstlisting}[basicstyle=\ttfamily\fontsize{4.9}{5.7}\selectfont]
+你是资深 DevOps 工程师。请先扫描当前仓库，再为生产服务器准备 Docker 部署。
+
+已知技术栈：
+- 前端：Node.js + pnpm；判断是静态构建还是 Next.js / Node SSR。
+- 后端：Python FastAPI + uv，必须遵循 pyproject.toml 与 uv.lock。
+- 数据库：MySQL；公网入口由 Nginx 提供，同域 /api 转发后端。
+
+请按顺序完成：
+1. 检查目录、构建脚本、启动命令、端口、环境变量、迁移、健康检查和上传目录。
+2. 先输出部署拓扑、假设、风险与将要新增/修改的文件，然后直接实现。
+3. 为每个服务创建生产级 Dockerfile：多阶段构建、锁文件安装、最小运行镜像。
+4. 创建 .dockerignore，排除 .git、.env、依赖、缓存、构建物和本地虚拟环境。
+5. 创建 compose.yaml：frontend、api、db、healthcheck、restart、内部 network、
+   MySQL named volume；只把网关绑定到宿主机 127.0.0.1。
+6. 创建 Nginx 配置：SPA fallback 或 SSR 反代、/api、代理头、WebSocket / SSE。
+7. 创建 .env.example，只保留变量名和安全示例，禁止写入任何真实 Secret。
+8. 提供数据库迁移、启动、日志、健康检查、更新、备份与回滚命令。
+
+约束：
+- 不猜测缺失的业务信息；会改变架构时先提出问题。
+- 保留现有可用配置，修改前说明原因；不要提交 .env、密码或密钥。
+- 执行 docker compose config，并检查构建命令与服务间连接。
+- 最后汇总文件路径、运行步骤、验证方法、风险和待确认项。
+  \end{lstlisting}
+\end{frame}
+
+\begin{frame}[fragile]{7.3 最小 Dockerfile 读法}{每条指令都在描述镜像构建过程}
   \begin{lstlisting}[language=bash]
 FROM python:3.12-slim
 WORKDIR /app
@@ -37,7 +53,7 @@ CMD ["python", "-m", "uvicorn", "app.main:app",
   \end{itemize}
 \end{frame}
 
-\begin{frame}{7.3 Docker 层与缓存}{把变化少的步骤放前面}
+\begin{frame}{7.4 Docker 层与缓存}{把变化少的步骤放前面}
   \begin{enumerate}
     \item 复制依赖清单与锁文件。
     \item 安装依赖，生成可缓存层。
@@ -55,7 +71,7 @@ CMD ["python", "-m", "uvicorn", "app.main:app",
   \DAtagline{常见错误}{先 \DAcmd{COPY . .} 再安装依赖，任何源码变化都会让依赖层缓存失效}
 \end{frame}
 
-\begin{frame}[fragile]{7.4 .dockerignore 控制构建上下文}{缩小构建上下文并排除敏感文件}
+\begin{frame}[fragile]{7.5 .dockerignore 控制构建上下文}{缩小构建上下文并排除敏感文件}
   \begin{lstlisting}
 .git
 .env
@@ -75,7 +91,7 @@ coverage
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{7.5 Build、Run、Port 三个动作}{左边是宿主机端口，右边是容器端口}
+\begin{frame}[fragile]{7.6 Build、Run、Port 三个动作}{左边是宿主机端口，右边是容器端口}
   \begin{lstlisting}[language=bash]
 docker build -t customer-api:1.0 .
 
@@ -92,7 +108,7 @@ docker run -d \
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{7.6 容器排错的四个命令}{状态、日志、进程内检查、配置}
+\begin{frame}[fragile]{7.7 容器排错的四个命令}{状态、日志、进程内检查、配置}
   \begin{lstlisting}[language=bash]
 docker ps -a
 docker logs --tail 200 -f customer-api
@@ -106,7 +122,7 @@ docker inspect customer-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}{7.7 Volume 解决数据持久化}{容器可替换，数据必须保留}
+\begin{frame}{7.8 Volume 解决数据持久化}{容器可替换，数据必须保留}
   \begin{DAtable}{@{}p{31mm}p{40mm}p{51mm}@{}}
     \toprule
     数据 & 是否放镜像 & 推荐位置 \\
@@ -121,7 +137,7 @@ docker inspect customer-api
   \DAtagline{设计原则}{应用容器应尽量无状态，方便重建、替换和横向扩展}
 \end{frame}
 
-\begin{frame}{7.8 Docker Network 让服务用名字互访}{Compose 会为项目创建默认网络}
+\begin{frame}{7.9 Docker Network 让服务用名字互访}{Compose 会为项目创建默认网络}
   \centering
   \begin{tikzpicture}[node distance=9mm]
     \node[DAflow,minimum width=31mm] (frontend) {frontend\\Nginx};
@@ -138,7 +154,7 @@ docker inspect customer-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}{7.9 Healthcheck 与 restart}{分别负责健康判断与重启策略}
+\begin{frame}{7.10 Healthcheck 与 restart}{分别负责健康判断与重启策略}
   \begin{DAtable}{@{}p{29mm}p{43mm}p{50mm}@{}}
     \toprule
     机制 & 判断对象 & 用途 \\
@@ -154,7 +170,7 @@ docker inspect customer-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{7.10 Docker Compose 管理多容器应用}{一份 YAML 描述服务、网络、卷与配置}
+\begin{frame}[fragile]{7.11 Docker Compose 管理多容器应用}{一份 YAML 描述服务、网络、卷与配置}
   \begin{lstlisting}[language=bash]
 docker compose config
 docker compose build
