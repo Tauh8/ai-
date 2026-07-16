@@ -22,22 +22,7 @@
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.2 日志分层看什么}{同一请求最好能用 Request ID 串起来}
-  \begin{DAtable}{@{}p{29mm}p{43mm}p{49mm}@{}}
-    \toprule
-    日志层 & 关注字段 & 常见问题 \\
-    \midrule
-    Nginx Access & Host、Path、Status、耗时 & 请求是否到达、慢在哪 \\
-    Nginx Error & upstream、connect、timeout & 502、证书、配置 \\
-    应用日志 & Request ID、用户、异常栈 & 业务错误、第三方 API \\
-    Docker / 进程 & Exit Code、Restart Count & 启动失败、崩溃循环 \\
-    MySQL & 连接、慢查询、磁盘 & 密码、迁移、性能 \\
-    \bottomrule
-  \end{DAtable}
-  \DAtagline{日志纪律}{不记录密码、Token、完整身份证件与模型密钥；生产错误要可行动}
-\end{frame}
-
-\begin{frame}[fragile]{9.3 502 Bad Gateway 决策树}{Nginx 到上游的连接失败}
+\begin{frame}[fragile]{9.2 502 Bad Gateway 决策树}{Nginx 到上游的连接失败}
   \begin{lstlisting}[language=bash]
 # 1. Is the process/container running?
 docker compose ps
@@ -55,20 +40,7 @@ nginx -t
   \DAtagline{结论}{本机 curl 都失败，先修应用；本机成功但域名失败，再查 Nginx 与防火墙}
 \end{frame}
 
-\begin{frame}{9.4 404 有三种完全不同的来源}{先看响应内容和 Server Header}
-  \begin{DAtable}{@{}p{31mm}p{42mm}p{49mm}@{}}
-    \toprule
-    现象 & 可能来源 & 修复方向 \\
-    \midrule
-    刷新前端子路由 404 & Nginx 找不到文件 & SPA \DAcmd{try\_files} \\
-    \DAfile{/api} 返回前端 HTML & 路由顺序 / 回退误吞 API & 独立 \DAfile{location /api/} \\
-    FastAPI JSON 404 & 路径被代理改写错误 & 检查尾斜杠与 root path \\
-    静态 JS / CSS 404 & 构建 base path 错 & 检查资源前缀与站点根目录 \\
-    \bottomrule
-  \end{DAtable}
-\end{frame}
-
-\begin{frame}{9.5 数据库连接失败怎么分层}{网络、账号、Schema、迁移}
+\begin{frame}{9.3 数据库连接失败怎么分层}{网络、账号、Schema、迁移}
   \begin{enumerate}
     \item 主机名是否正确：容器内用 \DAfile{db}，宿主机进程可能用 \DAfile{127.0.0.1}。
     \item 端口是否正确，数据库是否真正 Ready。
@@ -79,7 +51,7 @@ nginx -t
   \DAtagline{容器陷阱}{API 容器里的 \DAfile{localhost:3306} 指向 API 容器自身}
 \end{frame}
 
-\begin{frame}[fragile]{9.6 服务器资源不足的症状}{构建时和运行时的瓶颈不同}
+\begin{frame}[fragile]{9.4 服务器资源不足的症状}{构建时和运行时的瓶颈不同}
   \begin{lstlisting}[language=bash]
 free -h
 df -h
@@ -94,22 +66,7 @@ top
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.7 备份范围与恢复验证}{数据库、上传文件、配置与证书}
-  \begin{DAtable}{@{}p{29mm}p{45mm}p{48mm}@{}}
-    \toprule
-    对象 & 备份方式 & 恢复验证 \\
-    \midrule
-    MySQL & 定时逻辑备份 + 云快照 & 新库导入并跑关键查询 \\
-    上传文件 & Volume / 目录同步 / 对象存储版本 & 随机抽样文件可打开 \\
-    Compose / Nginx & 进入 Git & 新服务器可复现 \\
-    Env 变量名 & \DAfile{.env.example} + Secret 清单 & 新环境变量齐全 \\
-    证书 & 可自动重新签发为主 & 续签任务与域名验证可用 \\
-    \bottomrule
-  \end{DAtable}
-  \DAtagline{3-2-1}{重要数据至少 3 份、2 种介质、1 份异地；课堂项目也要养成习惯}
-\end{frame}
-
-\begin{frame}{9.8 单机部署的安全基线}{默认拒绝，按需开放}
+\begin{frame}{9.5 单机部署的安全基线}{默认拒绝，按需开放}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{itemize}
@@ -133,7 +90,7 @@ top
   \DAtagline{现实边界}{一台服务器适合小型项目和教学；业务增长后再拆数据库、对象存储与负载均衡}
 \end{frame}
 
-\begin{frame}{9.9 一次规范发布包含哪些阶段}{发布前、中、后都要有证据}
+\begin{frame}{9.6 一次规范发布包含哪些阶段}{发布前、中、后都要有证据}
   \begin{DAtable}{@{}p{23mm}p{94mm}@{}}
     \toprule
     阶段 & 动作 \\
@@ -149,7 +106,7 @@ top
   \end{DAtable}
 \end{frame}
 
-\begin{frame}{9.10 回滚触发条件}{提前定义阈值与决策人}
+\begin{frame}{9.7 回滚触发条件}{提前定义阈值与决策人}
   \begin{itemize}
     \item 健康检查持续失败，服务无法启动。
     \item 登录、支付、核心对话等关键链路不可用。
@@ -160,7 +117,7 @@ top
   \DAtagline{决策原则}{先恢复服务，再分析根因；回滚本身也需要验证与记录}
 \end{frame}
 
-\begin{frame}{9.11 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
+\begin{frame}{9.8 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
   \centering
   \begin{tikzpicture}[node distance=2mm]
     \node[DAflow,minimum width=18mm] (push) {Push / 合并};
@@ -182,7 +139,7 @@ top
   \end{itemize}
 \end{frame}
 
-\begin{frame}{9.12 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
+\begin{frame}{9.9 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
   \begin{enumerate}
     \item 确认上线前修复已经合并到主分支。
     \item 购买服务器后，完成宝塔基础环境配置。
@@ -194,21 +151,7 @@ top
   \end{enumerate}
 \end{frame}
 
-\begin{frame}{9.13 官方参考资料 · 协作与运行时}
-  \scriptsize
-  \begin{itemize}
-    \item \href{https://git-scm.com/book/en/v2}{Pro Git Book · Git 基础与分支}
-    \item \href{https://docs.github.com/en/get-started/using-github/github-flow}{GitHub Docs · GitHub Flow}
-    \item \href{https://docs.github.com/en/pull-requests/collaborating-with-pull-requests/proposing-changes-to-your-work-with-pull-requests/about-pull-requests}{GitHub Docs · About Pull Requests}
-    \item \href{https://docs.github.com/en/repositories/configuring-branches-and-merges-in-your-repository/managing-protected-branches/about-protected-branches}{GitHub Docs · Protected Branches}
-    \item \href{https://pnpm.io/docker}{pnpm Docs · Working with Docker}
-    \item \href{https://docs.astral.sh/uv/guides/integration/docker/}{uv Docs · Using uv in Docker}
-    \item \href{https://fastapi.tiangolo.com/deployment/docker/}{FastAPI Docs · FastAPI in Containers}
-    \item \href{https://docs.docker.com/compose/how-tos/production/}{Docker Docs · Use Compose in Production}
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{9.14 官方参考资料 · 宝塔、网络与 HTTPS}
+\begin{frame}{9.10 官方参考资料 · 宝塔、网络与 HTTPS}
   \scriptsize
   \begin{itemize}
     \item \href{https://docs.bt.cn/}{宝塔面板官方文档}

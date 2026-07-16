@@ -41,35 +41,52 @@ location / {
 \end{frame}
 
 \begin{frame}{6.4 FastAPI 在宝塔中的运行模型}{锁定依赖、仅本机监听、交给进程守护}
-  \begin{DAtable}{@{}p{31mm}p{86mm}@{}}
-    \toprule
-    关键点 & 生产环境含义 \\
-    \midrule
-    依赖 & 遵循 \DAfile{pyproject.toml} 与 \DAfile{uv.lock}，不临时升级版本 \\
-    启动入口 & 使用项目真实的 ASGI 入口与生产启动命令 \\
-    监听地址 & 监听 \DAfile{127.0.0.1:8000}，只允许本机 Nginx 访问 \\
-    健康检查 & 提供轻量 \DAfile{/health}，验证进程、依赖与必要连接 \\
-    运行身份 & 使用非 root 用户，并明确日志、上传目录的写权限 \\
-    进程生命周期 & 由宝塔项目管理器负责开机启动、异常重启与日志 \\
-    \bottomrule
-  \end{DAtable}
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \begin{DAtable*}{@{}p{19mm}p{49mm}@{}}
+        \toprule
+        关键点 & 生产环境含义 \\
+        \midrule
+        依赖 & 遵循 \DAfile{pyproject.toml} 与 \DAfile{uv.lock} \\
+        启动入口 & 使用项目真实的 ASGI 入口 \\
+        监听地址 & 仅监听 \DAfile{127.0.0.1:8000} \\
+        健康检查 & 提供轻量 \DAfile{/health} \\
+        生命周期 & 开机启动、异常重启与日志 \\
+        \bottomrule
+      \end{DAtable*}
+    \end{column}
+    \begin{column}{0.38\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=39mm]{assets/official/collected/fastapi-process-ram.png}}
+      \par\smallskip
+      {\scriptsize 一个服务可能由多个独立进程共同承担请求。}
+    \end{column}
+  \end{columns}
   \DAtagline{两个阶段}{先证明应用能启动，再交给守护进程长期运行}
+  \DAsource{FastAPI Docs · Deployment Concepts}{https://fastapi.tiangolo.com/deployment/concepts/}
 \end{frame}
 
 \begin{frame}{6.5 进程守护需要配置什么}{SSH 断开后仍运行，异常后能够恢复}
-  \begin{DAtable*}{@{}p{31mm}p{84mm}@{}}
-    \toprule
-    配置项 & 需要确认的内容 \\
-    \midrule
-    工作目录 & 相对路径、配置文件和日志路径从哪里解析 \\
-    运行环境 & 使用项目自己的 Python 虚拟环境或 Node 版本 \\
-    启动命令 & 与项目脚本一致，端口不得和其他服务冲突 \\
-    运行用户 & 非 root，并具备必要的读取与写入权限 \\
-    环境变量 & 通过面板项目配置或受控 Env 文件注入 \\
-    生命周期 & 开机启动、异常退出重启、停止超时与日志保留 \\
-    \bottomrule
-  \end{DAtable*}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item 工作目录与真实启动入口。
+        \item Python 虚拟环境或 Node 版本。
+        \item 本机监听端口与运行用户。
+        \item 环境变量和受控 Env 文件。
+        \item 开机启动与异常退出重启。
+        \item 标准输出、错误日志和保留周期。
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=50mm]{assets/official/collected/fastapi-process-model.png}}
+      \par\smallskip
+      {\scriptsize 守护工具关注进程、用户、资源和退出状态。}
+    \end{column}
+  \end{columns}
   \DAtagline*{版本差异}{不同宝塔版本入口可能显示为 Python 项目、应用管理器或进程守护}
+  \DAsource{FastAPI Docs · Server Processes}{https://fastapi.tiangolo.com/deployment/concepts/}
 \end{frame}
 
 \begin{frame}[fragile]{6.6 Nginx 把 /api 转给 FastAPI}{同域部署减少 CORS 与 Cookie 问题}

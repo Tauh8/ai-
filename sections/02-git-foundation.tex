@@ -2,20 +2,9 @@
 
 \begin{frame}{2.1 Git 的三个区域}{工作区、暂存区、仓库}
   \centering
-  \begin{tikzpicture}[node distance=9mm]
-    \node[DAflow,minimum width=34mm] (work) {Working Tree\\正在编辑的文件};
-    \node[DAflow,minimum width=34mm,right=of work] (stage) {Staging Area\\下一次提交清单};
-    \node[DAflow,minimum width=34mm,right=of stage] (repo) {Local Repository\\Commit 历史};
-    \draw[DAarrowred] (work) -- node[above,font=\tiny]{git add} (stage);
-    \draw[DAarrowred] (stage) -- node[above,font=\tiny]{git commit} (repo);
-    \draw[DAarrow] (stage) to[bend left=22] node[below,font=\tiny]{git restore --staged} (work);
-    \draw[DAarrow] (repo) to[bend left=22] node[below,font=\tiny]{git restore / revert} (work);
-  \end{tikzpicture}
-  \par
-  \begin{itemize}
-    \item \DAcmd{git add} 选择进入下一个 Commit 的变化。
-    \item 一次 Commit 应该表达一个完整、可解释、可回滚的意图。
-  \end{itemize}
+  \DAframed{\includegraphics[width=75mm]{assets/official/collected/git-areas.png}}
+  \DAtagline{关键路径}{\DAcmd{git add} 把变化送入暂存区；\DAcmd{git commit} 写入本地仓库}
+  \DAsource{Pro Git · The Three States}{https://git-scm.com/book/en/v2/Getting-Started-What-is-Git\%3F}
 \end{frame}
 
 \begin{frame}[fragile]{2.2 第一次使用 Git 的身份配置}{作者信息会写入每个 Commit}
@@ -59,16 +48,26 @@ git remote -v
 \end{frame}
 
 \begin{frame}[fragile]{2.4 一次最小提交循环：从 git add 开始}{选择文件、检查暂存区、创建本地 Commit}
-  \begin{lstlisting}[language=bash]
+  \begin{columns}[T]
+    \begin{column}{0.42\textwidth}
+  \begin{lstlisting}[language=bash,basicstyle=\ttfamily\fontsize{5.4}{6.2}\selectfont]
 git add docs/git-demo-notes.md
 git diff --cached
 git commit -m "docs: add Git workflow demo notes"
   \end{lstlisting}
-  \begin{itemize}
-    \item \DAcmd{git add} 选择本次提交包含的文件或代码块。
-    \item \DAcmd{git diff --cached} 检查即将提交的内容。
-    \item \DAcmd{git commit} 只写入本机仓库的 \DAfile{.git} 历史。
-  \end{itemize}
+      \begin{itemize}
+        \item 先选择，再检查，最后提交。
+        \item Commit 只写入本机仓库。
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.54\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=66mm]{assets/official/collected/git-lifecycle.png}}
+      \par\smallskip
+      {\scriptsize 文件会在未跟踪、已修改、已暂存之间流转。}
+    \end{column}
+  \end{columns}
+  \DAsource{Pro Git · Recording Changes}{https://git-scm.com/book/en/v2/Git-Basics-Recording-Changes-to-the-Repository}
 \end{frame}
 
 \begin{frame}[fragile]{2.5 Commit 写入本地仓库}{Commit 0fd229a}
@@ -116,19 +115,23 @@ $ git status -sb
 \end{frame}
 
 \begin{frame}{2.7 好 Commit 的三个标准}{小、完整、能读懂}
-  \begin{DAtable}{@{}p{25mm}p{44mm}p{54mm}@{}}
-    \toprule
-    标准 & 好例子 & 坏例子 \\
-    \midrule
-    单一意图 & 登录表单接 API & 登录 + 首页改版 + 升级依赖 \\
-    可独立验证 & 提交后测试能通过 & 中间状态无法运行 \\
-    信息明确 & \DAfile{fix(api): handle 401} & \DAfile{update} / \DAfile{改一下} \\
-    \bottomrule
-  \end{DAtable}
-  \begin{itemize}
-    \item 常用前缀：\DAfile{feat}、\DAfile{fix}、\DAfile{docs}、\DAfile{refactor}、\DAfile{test}、\DAfile{chore}。
-    \item Commit 是给未来的自己、Review 者和回滚操作看的。
-  \end{itemize}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{itemize}
+        \item \textbf{单一意图}：一次只解决一个问题。
+        \item \textbf{可独立验证}：提交后项目仍可运行或测试。
+        \item \textbf{信息明确}：说明改了什么以及为什么改。
+      \end{itemize}
+      \DAtagline{示例}{\DAfile{fix(api): handle 401 response}}
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=53mm]{assets/official/collected/git-snapshots.png}}
+      \par\smallskip
+      {\scriptsize 每个 Commit 保存一次可追踪的项目快照。}
+    \end{column}
+  \end{columns}
+  \DAsource{Pro Git · Snapshots, Not Differences}{https://git-scm.com/book/en/v2/Getting-Started-What-is-Git\%3F}
 \end{frame}
 
 \begin{frame}[fragile]{2.8 用 log 与 show 追踪变化}{查看提交顺序、指针位置与文件变化}
@@ -153,30 +156,18 @@ $ git show --stat 0fd229a
 
 \begin{frame}{2.9 分支是什么}{指向某个 Commit 的可移动标签}
   \centering
-  \begin{tikzpicture}[x=18mm,y=8mm]
-    \node[DAflow,minimum width=18mm] (c1) at (0,0) {C1};
-    \node[DAflow,minimum width=18mm] (c2) at (1,0) {C2};
-    \node[DAflow,minimum width=18mm] (c3) at (2,0) {C3};
-    \node[DAflow,minimum width=18mm] (f1) at (3,1) {F1};
-    \node[DAflow,minimum width=18mm] (f2) at (4,1) {F2};
-    \node[DAflow,minimum width=18mm] (m1) at (3,-1) {M1};
-    \draw[DAarrow] (c1) -- (c2);
-    \draw[DAarrow] (c2) -- (c3);
-    \draw[DAarrowred] (c3) -- (f1);
-    \draw[DAarrowred] (f1) -- (f2);
-    \draw[DAarrow] (c3) -- (m1);
-    \node[font=\scriptsize\bfseries,text=DARed,above=1mm of f2] {feature/login};
-    \node[font=\scriptsize\bfseries,text=DAInk2,below=1mm of m1] {main};
-  \end{tikzpicture}
-  \par
+  \DAframed{\includegraphics[width=70mm]{assets/official/collected/git-branch-history.png}}
   \begin{itemize}
     \item 分支是指向 Commit 的轻量指针。
     \item 每个任务独立分支，可以并行开发、单独 Review、随时放弃。
   \end{itemize}
+  \DAsource{Pro Git · Branches in a Nutshell}{https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell}
 \end{frame}
 
 \begin{frame}[fragile]{2.10 分支的日常命令}{从最新 main 开始工作}
-  \begin{lstlisting}[language=bash]
+  \begin{columns}[T]
+    \begin{column}{0.53\textwidth}
+  \begin{lstlisting}[language=bash,basicstyle=\ttfamily\fontsize{5.2}{6.0}\selectfont]
 git switch main
 git pull --ff-only
 
@@ -186,11 +177,17 @@ git switch -c feature/login-api
 git switch main
 git branch -d feature/login-api
   \end{lstlisting}
-  \begin{itemize}
-    \item 分支名建议：\DAfile{feature/login-api}、\DAfile{fix/chat-scroll}、\DAfile{docs/deploy-guide}。
-    \item \DAcmd{--ff-only} 避免 \DAcmd{git pull} 意外生成本地合并提交。
-    \item 分支合并后及时删除，避免团队继续在过期分支上工作。
-  \end{itemize}
+    \end{column}
+    \begin{column}{0.43\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=52mm]{assets/official/collected/git-two-branches.png}}
+      \begin{itemize}
+        \item 从最新 \DAfile{main} 创建任务分支。
+        \item 合并后及时删除过期分支。
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \DAsource{Pro Git · Basic Branching}{https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging}
 \end{frame}
 
 \begin{frame}[fragile]{2.11 撤销操作：先判断“是否已经共享”}{公开历史优先 revert，未共享历史才考虑重写}

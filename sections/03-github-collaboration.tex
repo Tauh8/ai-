@@ -1,26 +1,22 @@
 \DAsection[任务分支、小步提交、同步 main、合并检查]{GitHub 小团队协作流程}
 
 \begin{frame}{3.1 小团队开发的完整流程}{一个任务、一个分支、一个合并目标}
-  \centering
-  \begin{tikzpicture}[node distance=2mm]
-    \node[DAflow,minimum width=18mm] (task) {任务\\明确边界};
-    \node[DAflow,minimum width=18mm,right=of task] (branch) {Branch\\隔离修改};
-    \node[DAflow,minimum width=18mm,right=of branch] (commit) {Commit\\记录变化};
-    \node[DAflow,minimum width=18mm,right=of commit] (push) {Push\\共享分支};
-    \node[DAflow,minimum width=18mm,right=of push] (review) {PR\\简单 Review};
-    \node[DAflow,minimum width=18mm,right=of review] (merge) {Merge\\进入 main};
-    \draw[DAarrowred] (task) -- (branch);
-    \draw[DAarrowred] (branch) -- (commit);
-    \draw[DAarrowred] (commit) -- (push);
-    \draw[DAarrowred] (push) -- (review);
-    \draw[DAarrowred] (review) -- (merge);
-  \end{tikzpicture}
-  \par\medskip
-  \begin{itemize}
-    \item 任务先明确负责人、修改范围与完成条件。
-    \item 每个任务使用独立分支，Commit 保持小而清晰。
-    \item 推送到在线仓库后，由同伴快速检查并合并到 \DAfile{main}。
-  \end{itemize}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \centering
+      \DAframed{\includegraphics[height=47mm]{assets/official/collected/git-topic-branches.png}}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{enumerate}
+        \item 明确任务边界与负责人。
+        \item 从 \DAfile{main} 创建短生命周期分支。
+        \item 小步 Commit，并 Push 共享。
+        \item 同伴快速检查后合并。
+        \item 删除已完成的功能分支。
+      \end{enumerate}
+    \end{column}
+  \end{columns}
+  \DAsource{Pro Git · Topic Branches}{https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows}
 \end{frame}
 
 \begin{frame}[fragile]{3.2 开发者的日常命令流}{同步 main、创建分支、提交、推送}
@@ -40,21 +36,31 @@ git push -u origin feature/chat-history
 \end{frame}
 
 \begin{frame}{3.3 合并前快速检查}{围绕本次任务检查逻辑、测试、配置与密钥}
-  \begin{DAtable}{@{}p{29mm}p{88mm}@{}}
-    \toprule
-    检查项 & 小团队做法 \\
-    \midrule
-    改动范围 & 确认只包含当前任务，排除无关格式化与临时文件 \\
-    核心逻辑 & 检查错误处理、接口变化和关键业务路径 \\
-    测试结果 & 运行构建、测试或最小可行验证，记录检查结果 \\
-    配置安全 & 排除 \DAfile{.env}、密码、密钥和本地专用配置 \\
-    合并收尾 & 检查通过后进入 \DAfile{main}，删除已完成的功能分支 \\
-    \bottomrule
-  \end{DAtable}
+  \centering
+  \DAframed{\includegraphics[width=58mm]{assets/official/collected/git-basic-merge.png}}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item 改动只包含当前任务。
+        \item 核心逻辑与错误处理正确。
+        \item 构建、测试或最小验证通过。
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item 不包含 \DAfile{.env}、密码和密钥。
+        \item 接口、配置和迁移变化已说明。
+        \item 合并后删除功能分支。
+      \end{itemize}
+    \end{column}
+  \end{columns}
   \DAtagline{控制范围}{一次合并只解决一个问题，降低检查与回滚成本}
+  \DAsource{Pro Git · Basic Merging}{https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging}
 \end{frame}
 
 \begin{frame}[fragile]{3.4 开发期间同步 main}{小团队优先使用 Merge，规则保持统一}
+  \centering
+  \includegraphics[width=104mm]{assets/official/collected/git-long-running-branches.png}
   \begin{lstlisting}[language=bash]
 git fetch origin
 git switch feature/chat-history
@@ -66,8 +72,8 @@ git push
   \begin{itemize}
     \item 功能分支开发超过半天时主动同步 \DAfile{main}。
     \item 冲突在自己的分支解决并测试，避免把问题留到最终合并。
-    \item 团队熟悉历史重写后，再统一讨论是否使用 Rebase。
   \end{itemize}
+  \DAsource{Pro Git · Long-Running Branches}{https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows}
 \end{frame}
 
 \begin{frame}{3.5 密钥必须留在 Git 之外}{泄漏后立即轮换并清理历史}

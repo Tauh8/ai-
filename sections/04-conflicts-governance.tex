@@ -1,6 +1,8 @@
 \DAsection[读标记、解冲突、保护 main]{冲突处理、Review 与主分支治理}
 
 \begin{frame}[fragile]{4.1 先学会读冲突标记}{当前分支、分隔线、待合并分支}
+  \centering
+  \includegraphics[width=48mm]{assets/official/collected/git-two-branches.png}
   \begin{lstlisting}
 <<<<<<< HEAD
 const apiBase = "/api";
@@ -10,9 +12,9 @@ const apiBase = "http://localhost:8000";
   \end{lstlisting}
   \begin{itemize}
     \item 先确认生产架构与配置约定，再选择或融合两侧代码。
-    \item 最终结果可能选择一边，也可能融合成第三种写法。
     \item 删除全部标记后，必须重新运行测试与构建。
   \end{itemize}
+  \DAsource{Pro Git · Divergent Branches}{https://git-scm.com/book/en/v2/Git-Branching-Branches-in-a-Nutshell}
 \end{frame}
 
 \begin{frame}[fragile]{4.2 命令行解决冲突的标准步骤}{定位、编辑、验证、继续}
@@ -47,44 +49,35 @@ git commit                 # merge workflow
 \end{frame}
 
 \begin{frame}{4.4 如何减少冲突}{重点是工作拆分、同步和接口约定}
-  \begin{DAtable}{@{}p{35mm}p{82mm}@{}}
-    \toprule
-    做法 & 原理 \\
-    \midrule
-    小任务、短生命周期分支 & 缩短多人修改的重叠时间与范围 \\
-    明确模块负责人 & 减少多人同时改同一核心文件 \\
-    频繁同步 main & 尽早暴露竞争变化 \\
-    格式化单独提交 & 避免真实逻辑变化被噪声淹没 \\
-    先沟通公共接口 & Schema、路由、配置文件先约定再编码 \\
-    锁文件由实际安装命令生成 & 不手工编辑 \DAfile{pnpm-lock.yaml} / \DAfile{uv.lock} \\
-    \bottomrule
-  \end{DAtable}
+  \begin{columns}[T]
+    \begin{column}{0.54\textwidth}
+      \begin{itemize}
+        \item 拆成小任务，使用短生命周期分支。
+        \item 明确模块负责人，减少同时修改核心文件。
+        \item 频繁同步 \DAfile{main}，尽早暴露竞争变化。
+        \item Schema、路由和公共配置先约定再编码。
+        \item 格式化与依赖更新单独提交。
+      \end{itemize}
+    \end{column}
+    \begin{column}{0.42\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=46mm]{assets/official/collected/git-topic-branches.png}}
+      \par\smallskip
+      {\scriptsize 一个分支只承载一个清晰任务。}
+    \end{column}
+  \end{columns}
+  \DAsource{Pro Git · Topic Branches}{https://git-scm.com/book/en/v2/Git-Branching-Branching-Workflows}
 \end{frame}
 
 \begin{frame}{4.5 Rebase 为什么需要谨慎}{它会把 Commit 复制到新的父节点上}
   \centering
-  \begin{tikzpicture}[x=18mm,y=10mm]
-    \node[DAflow,minimum width=16mm] (a) at (0,0) {A};
-    \node[DAflow,minimum width=16mm] (b) at (1,0) {B};
-    \node[DAflow,minimum width=16mm] (c) at (2,0) {C};
-    \node[DAflow,minimum width=16mm] (d) at (3,0) {D};
-    \node[DAflow,minimum width=16mm] (f1) at (2,1.2) {F1};
-    \node[DAflow,minimum width=16mm] (f2) at (3,1.2) {F2};
-    \node[DAflow,minimum width=16mm] (f1p) at (4,0) {F1'};
-    \node[DAflow,minimum width=16mm] (f2p) at (5,0) {F2'};
-    \draw[DAarrow] (a) -- (b);
-    \draw[DAarrow] (b) -- (c);
-    \draw[DAarrow] (c) -- (d);
-    \draw[DAarrowred] (b) -- (f1);
-    \draw[DAarrowred] (f1) -- (f2);
-    \draw[DAarrowred] (d) -- (f1p);
-    \draw[DAarrowred] (f1p) -- (f2p);
-  \end{tikzpicture}
-  \par\medskip
+  \DAframed{\includegraphics[width=84mm]{assets/official/collected/git-basic-merge.png}}
   \begin{itemize}
-    \item Rebase 后 F1/F2 变成新的 F1'/F2'，Commit ID 改变。
+    \item Merge 保留分叉历史；Rebase 会复制提交到新的父节点。
+    \item Rebase 后 Commit ID 改变，远程推送可能需要历史重写。
     \item 只重写自己的功能分支；共享历史保持稳定。
   \end{itemize}
+  \DAsource{Pro Git · Basic Merging}{https://git-scm.com/book/en/v2/Git-Branching-Basic-Branching-and-Merging}
 \end{frame}
 
 \begin{frame}[fragile]{4.6 Rebase 后推送用 force-with-lease}{它会检查远程分支是否被别人更新}

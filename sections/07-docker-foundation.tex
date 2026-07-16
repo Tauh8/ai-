@@ -54,25 +54,30 @@ CMD ["python", "-m", "uvicorn", "app.main:app",
 \end{frame}
 
 \begin{frame}{7.4 Docker 层与缓存}{把变化少的步骤放前面}
-  \begin{enumerate}
-    \item 复制依赖清单与锁文件。
-    \item 安装依赖，生成可缓存层。
-    \item 再复制变化频繁的业务源码。
-    \item 执行构建，最后只把运行产物带进最终镜像。
-  \end{enumerate}
   \begin{columns}[T]
-    \begin{column}{0.48\textwidth}
-      \DAstatbox{快}{依赖不变时复用缓存}
+    \begin{column}{0.43\textwidth}
+      \begin{enumerate}
+        \item 复制依赖清单与锁文件。
+        \item 安装依赖，生成可缓存层。
+        \item 再复制频繁变化的源码。
+        \item 最终镜像只保留运行产物。
+      \end{enumerate}
     \end{column}
-    \begin{column}{0.48\textwidth}
-      \DAstatbox{小}{多阶段构建不携带开发工具}
+    \begin{column}{0.53\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=46mm]{assets/official/collected/docker-image-layers.png}}
+      \par\smallskip
+      {\scriptsize 每条构建指令形成可复用的只读层。}
     \end{column}
   \end{columns}
   \DAtagline{常见错误}{先 \DAcmd{COPY . .} 再安装依赖，任何源码变化都会让依赖层缓存失效}
+  \DAsource{Docker Docs · Understanding Image Layers}{https://docs.docker.com/get-started/docker-concepts/building-images/understanding-image-layers/}
 \end{frame}
 
 \begin{frame}[fragile]{7.5 Build、Run、Port 三个动作}{左边是宿主机端口，右边是容器端口}
-  \begin{lstlisting}[language=bash]
+  \begin{columns}[T]
+    \begin{column}{0.50\textwidth}
+  \begin{lstlisting}[language=bash,basicstyle=\ttfamily\fontsize{5.2}{6.0}\selectfont]
 docker build -t customer-api:1.0 .
 
 docker run -d \
@@ -81,11 +86,18 @@ docker run -d \
   --restart unless-stopped \
   customer-api:1.0
   \end{lstlisting}
-  \begin{itemize}
-    \item \DAfile{127.0.0.1:8000:8000} 只绑定宿主机本地，供 Nginx 反代。
-    \item 如果写 \DAfile{8000:8000}，通常会绑定全部网卡，应再由防火墙限制。
-    \item Image Tag 是版本坐标；生产环境使用明确版本或 Commit SHA。
-  \end{itemize}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \centering
+      \DAframed{\includegraphics[width=55mm]{assets/official/collected/docker-architecture.png}}
+      \begin{itemize}
+        \item 左侧是宿主机端口。
+        \item 右侧是容器监听端口。
+        \item 生产镜像使用明确 Tag。
+      \end{itemize}
+    \end{column}
+  \end{columns}
+  \DAsource{Docker Docs · Docker Architecture}{https://docs.docker.com/get-started/docker-overview/}
 \end{frame}
 
 \begin{frame}[fragile]{7.6 容器排错的四个命令}{状态、日志、进程内检查、配置}
