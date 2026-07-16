@@ -138,7 +138,7 @@ top
     \toprule
     阶段 & 动作 \\
     \midrule
-    准备 & PR 合并、测试通过、记录版本、备份、确认回滚点 \\
+    准备 & 分支已合并、测试通过、记录版本、备份、确认回滚点 \\
     构建 & 锁文件安装、生产构建、镜像打 Tag、扫描敏感信息 \\
     迁移 & 执行兼容性数据库迁移，失败则停止 \\
     发布 & 重启 / 替换进程或容器，保持变更范围最小 \\
@@ -163,7 +163,7 @@ top
 \begin{frame}{10.11 从手工部署走向 CI/CD}{今天先把手工 SOP 做对，再自动化}
   \centering
   \begin{tikzpicture}[node distance=2mm]
-    \node[DAflow,minimum width=18mm] (push) {Push / PR};
+    \node[DAflow,minimum width=18mm] (push) {Push / 合并};
     \node[DAflow,minimum width=18mm,right=of push] (ci) {CI\\Lint + Test};
     \node[DAflow,minimum width=18mm,right=of ci] (build) {Build\\Image + SHA};
     \node[DAflow,minimum width=18mm,right=of build] (registry) {Registry\\镜像};
@@ -184,7 +184,7 @@ top
 
 \begin{frame}{10.12 课堂综合实战}{把 Day 3 / Day 4 项目真正交付给另一个人访问}
   \begin{enumerate}
-    \item 两人一组，通过 Issue + Branch + PR 完成一个上线前修复。
+    \item 确认上线前修复已经合并到主分支。
     \item 购买服务器后，完成宝塔基础环境配置。
     \item 选择宝塔手工路线或 Docker Compose 路线部署。
     \item 配置域名、\DAfile{/api} 反向代理与 SSL。

@@ -1,4 +1,4 @@
-\DAsection[任务分支、小步提交、同步 main、轻量 Review]{GitHub 小团队协作流程}
+\DAsection[任务分支、小步提交、同步 main、合并检查]{GitHub 小团队协作流程}
 
 \begin{frame}{3.1 小团队开发的完整流程}{一个任务、一个分支、一个合并目标}
   \centering
@@ -19,7 +19,7 @@
   \begin{itemize}
     \item 任务先明确负责人、修改范围与完成条件。
     \item 每个任务使用独立分支，Commit 保持小而清晰。
-    \item PR 作为合并入口，同伴快速检查后进入 \DAfile{main}。
+    \item 推送到在线仓库后，由同伴快速检查并合并到 \DAfile{main}。
   \end{itemize}
 \end{frame}
 
@@ -36,21 +36,22 @@ git commit -m "feat(chat): load conversation history"
 
 git push -u origin feature/chat-history
   \end{lstlisting}
-  \DAtagline{下一步}{在 GitHub 创建 PR，由一名同伴检查后合并}
+  \DAtagline{下一步}{在 GitHub 发起合并请求，由一名同伴快速检查后合并}
 \end{frame}
 
-\begin{frame}{3.3 合并前做一次轻量 Review}{重点检查逻辑、测试、配置与密钥}
+\begin{frame}{3.3 合并前快速检查}{围绕本次任务检查逻辑、测试、配置与密钥}
   \begin{DAtable}{@{}p{29mm}p{88mm}@{}}
     \toprule
-    环节 & 小团队做法 \\
+    检查项 & 小团队做法 \\
     \midrule
-    PR 描述 & 一句话说明改动，附测试方法与必要截图 \\
-    Review & 检查核心逻辑、错误处理、接口变化与敏感信息 \\
-    修改 & 在原分支继续 Commit，PR 自动更新 \\
-    合并 & Review 通过后 Squash merge，并删除功能分支 \\
+    改动范围 & 确认只包含当前任务，排除无关格式化与临时文件 \\
+    核心逻辑 & 检查错误处理、接口变化和关键业务路径 \\
+    测试结果 & 运行构建、测试或最小可行验证，记录检查结果 \\
+    配置安全 & 排除 \DAfile{.env}、密码、密钥和本地专用配置 \\
+    合并收尾 & 检查通过后进入 \DAfile{main}，删除已完成的功能分支 \\
     \bottomrule
   \end{DAtable}
-  \DAtagline{控制范围}{一个 PR 只解决一个问题，降低 Review 与回滚成本}
+  \DAtagline{控制范围}{一次合并只解决一个问题，降低检查与回滚成本}
 \end{frame}
 
 \begin{frame}[fragile]{3.4 开发期间同步 main}{小团队优先使用 Merge，规则保持统一}

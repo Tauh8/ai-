@@ -51,7 +51,7 @@ git commit                 # merge workflow
     \toprule
     做法 & 原理 \\
     \midrule
-    小任务、小 PR & 缩短分支生命周期和重叠面积 \\
+    小任务、短生命周期分支 & 缩短多人修改的重叠时间与范围 \\
     明确模块负责人 & 减少多人同时改同一核心文件 \\
     频繁同步 main & 尽早暴露竞争变化 \\
     格式化单独提交 & 避免真实逻辑变化被噪声淹没 \\
@@ -102,7 +102,7 @@ git push --force-with-lease
 
 \begin{frame}{4.7 主分支保护规则}{main 始终代表“可部署版本”}
   \begin{itemize}
-    \item 禁止直接 Push，所有变化通过 Pull Request。
+    \item 禁止直接 Push，所有变化通过受控合并流程进入 \DAfile{main}。
     \item 至少一人 Approve，关键目录可配置 CODEOWNERS。
     \item 必须通过构建、测试、Lint 等状态检查。
     \item 必须解决 Review 对话后才能合并。
