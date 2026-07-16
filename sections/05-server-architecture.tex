@@ -1,0 +1,70 @@
+\DAsection[公网入口、端口与部署路线]{服务器购买占位与部署架构}
+
+\begin{frame}{5.1 服务器购买 · 现场演示}{购买页由讲师现场操作}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \DAtagline{地域}{靠近用户；境内上线关注备案}
+      \DAtagline{系统}{Ubuntu / Debian LTS 纯净镜像}
+      \DAtagline{配置}{课堂建议 2C4G 起步}
+      \DAtagline{网络}{公网 IPv4、带宽、22 / 80 / 443}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \DAfigureph[34mm]{现场演示：购买服务器\\记录公网 IP 与登录方式}
+      \DAtagline*{提醒}{在中国境内提供互联网信息服务，应依法判断备案 / 许可要求}
+    \end{column}
+  \end{columns}
+  \DAsource{工信部 · 非经营性互联网信息服务备案管理办法}{https://www.miit.gov.cn/api-gateway/jpaas-web-server/front/document/file-download?fileName=f1b8d119f55240b4813dd39360d2e0b0.pdf}
+\end{frame}
+
+\begin{frame}{5.2 公网请求路径}{DNS、Nginx、前端、API 与数据库}
+  \centering
+  \begin{tikzpicture}[node distance=2mm]
+    \node[DAflow,minimum width=18mm] (dns) {DNS\\域名解析};
+    \node[DAflow,minimum width=18mm,right=of dns] (firewall) {云防火墙\\80 / 443};
+    \node[DAflow,minimum width=18mm,right=of firewall] (nginx) {Nginx\\TLS};
+    \node[DAflow,minimum width=18mm,right=of nginx] (front) {前端\\静态 / SSR};
+    \node[DAflow,minimum width=18mm,right=of front] (api) {API\\127.0.0.1};
+    \node[DAstore,right=of api] (db) {MySQL};
+    \draw[DAarrowred] (dns) -- (firewall);
+    \draw[DAarrowred] (firewall) -- (nginx);
+    \draw[DAarrowred] (nginx) -- (front);
+    \draw[DAarrowred] (front) -- node[above,font=\tiny]{/api} (api);
+    \draw[DAarrow] (api) -- (db);
+  \end{tikzpicture}
+  \par\medskip
+  \begin{itemize}
+    \item 公网只开放必要入口；8000、3000、3306 留在本机或容器网络。
+    \item Nginx 负责域名、HTTPS、静态文件与反向代理。
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{5.3 端口开放策略}{公网保留 22、80、443}
+  \begin{DAtable}{@{}p{19mm}p{37mm}p{67mm}@{}}
+    \toprule
+    端口 & 典型用途 & 建议 \\
+    \midrule
+    22 & SSH & 仅管理使用；可限制来源 IP、使用密钥登录 \\
+    80 & HTTP & 证书验证与跳转 HTTPS \\
+    443 & HTTPS & 用户正式访问入口 \\
+    3000 & Node / Next.js & 默认仅本机或容器网络 \\
+    8000 & FastAPI & 默认仅本机或容器网络 \\
+    3306 & MySQL & 不向公网开放，应用走本机 / 内网 \\
+    \bottomrule
+  \end{DAtable}
+  \DAsource{阿里云轻量应用服务器 · 防火墙}{https://help.aliyun.com/zh/simple-application-server/user-guide/manage-the-firewall-of-a-server}
+\end{frame}
+
+\begin{frame}{5.4 宝塔与 Docker 的分工}{可视化运维与可重复交付}
+  \begin{DAtable}{@{}p{24mm}p{47mm}p{48mm}@{}}
+    \toprule
+    维度 & 宝塔部署 & Docker 部署 \\
+    \midrule
+    学习门槛 & 面板可视化，上手快 & 需要理解镜像、网络、卷 \\
+    环境一致性 & 依赖服务器当前状态 & 镜像描述运行环境 \\
+    迁移复现 & 需要记录手工步骤 & Dockerfile + Compose 可重复 \\
+    排错入口 & 面板日志 + 系统日志 & docker logs + 容器状态 \\
+    适用 & 新手、小型单机项目 & 团队交付、多服务、持续迭代 \\
+    \bottomrule
+  \end{DAtable}
+  \DAtagline{组合方式}{宝塔管理 Nginx 与证书，Docker Compose 运行应用}
+\end{frame}
