@@ -1,6 +1,6 @@
 # Day 5：Git 团队协作与全栈应用部署
 
-这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 109 个 PDF 页面、10 个章节。内容从 Git 本地模型和小团队开发流程开始，依次讲解冲突处理、主分支治理、服务器配置、宝塔部署、Docker / Compose、Node 前端、FastAPI 后端、Node 后端、域名、反向代理、SSL 与上线运维。
+这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 106 个 PDF 页面、10 个章节。内容从 Git 本地模型和小团队开发流程开始，依次讲解冲突处理、主分支治理、服务器配置、宝塔部署、Docker / Compose、Node 前端、FastAPI 后端、Node 后端、域名、反向代理、SSL 与上线运维。
 
 ## 两种输出
 
@@ -54,7 +54,7 @@ check_figs.py            配图分辨率检查
 ## 质量检查
 
 - 放映版与 PPT 转换友好版均已通过 XeLaTeX 编译。
-- 两个版本均为 109 页、16:9。
+- 两个版本均为 106 页、16:9。
 - 编译日志无 Overfull 警告。
 - `python3 check_figs.py main.tex` 检查结果为“全部达标”。
 - 放映版已逐页渲染并完成接触表视觉检查。

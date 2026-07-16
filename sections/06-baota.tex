@@ -1,20 +1,6 @@
-\DAsection[用面板管理 Nginx、进程、数据库与证书]{通过宝塔部署全栈项目}
+\DAsection[理解站点、进程、反向代理与配置]{宝塔部署的关键知识点}
 
-\begin{frame}{6.1 安装宝塔后的第一件事：加固面板}{面板是高权限管理入口}
-  \begin{enumerate}
-    \item 从宝塔官网复制当前系统对应的官方安装命令。
-    \item 保存安装输出中的面板地址、初始用户名和密码。
-    \item 首次登录立即修改强密码、面板端口与安全入口。
-    \item 云防火墙限制面板端口来源，优先绑定固定管理 IP。
-    \item 开启面板 HTTPS、登录告警与必要的双因素验证。
-  \end{enumerate}
-  \begin{alertblock}{供应链提醒}
-    不使用“破解版 / 纯净版 / 开心版”等第三方修改包，只从官方渠道安装与更新。
-  \end{alertblock}
-  \DAsource{宝塔官方下载}{https://www.bt.cn/new/download}
-\end{frame}
-
-\begin{frame}{6.2 安装基础环境}{Nginx、Node、pnpm、Python 与 MySQL}
+\begin{frame}{6.1 环境组件与职责}{先理解每一层负责什么}
   \begin{DAtable}{@{}p{28mm}p{38mm}p{55mm}@{}}
     \toprule
     组件 & 用途 & 选择建议 \\
@@ -30,53 +16,18 @@
   {\small\textcolor{DARed}{\bfseries 原则：}项目版本来自仓库声明，生产升级要有计划。}
 \end{frame}
 
-\begin{frame}[fragile]{6.3 服务器获取代码的推荐方式}{Git Clone + 只读 Deploy Key}
-  \begin{lstlisting}[language=bash]
-cd /www/wwwroot
-git clone git@github.com:your-org/customer-service.git
-cd customer-service
-
-git switch main
-git pull --ff-only
-git rev-parse --short HEAD
-  \end{lstlisting}
+\begin{frame}{6.2 静态前端在宝塔里的本质}{Nginx 读取构建产物，不直接运行前端源码}
   \begin{itemize}
-    \item 服务器只负责部署时，Deploy Key 尽量设为只读。
-    \item 记录当前 Commit ID，后续更新与回滚都以它为坐标。
-    \item 不在服务器直接改业务代码，否则 Git 历史与线上状态会分叉。
+    \item 网站根目录指向 \DAfile{dist/} 等生产构建产物，而非 \DAfile{src/} 或项目根目录。
+    \item Vite / React / Vue 的静态产物由 Nginx 直接返回，不需要常驻 Node 进程。
+    \item 前端请求使用相对路径 \DAfile{/api}，方便由同域 Nginx 转发后端。
+    \item 构建时环境变量会写入浏览器可见的静态文件，不能保存 Secret。
+    \item 环境变量或源码变化后，需要重新构建并替换产物。
   \end{itemize}
+  \DAtagline{先判断}{静态构建与 Next.js / Node SSR 的运行方式不同}
 \end{frame}
 
-\begin{frame}[fragile]{6.4 构建 Node 前端}{依赖锁定，API 地址使用生产配置}
-  \begin{lstlisting}[language=bash]
-cd /www/wwwroot/customer-service/frontend
-
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-
-ls -la dist
-  \end{lstlisting}
-  \begin{itemize}
-    \item Vite 常见输出目录是 \DAfile{dist/}；其他框架以项目配置为准。
-    \item 推荐前端请求相对路径 \DAfile{/api}，由 Nginx 转发到后端。
-    \item 构建时环境变量会写入静态文件，修改后必须重新构建。
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{6.5 创建静态站点}{网站根目录指向构建产物}
-  \begin{enumerate}
-    \item 宝塔左侧进入“网站”，添加站点并填写域名。
-    \item 站点类型选择纯静态；根目录指向前端 \DAfile{dist/}。
-    \item 确认运行用户对目录有读取权限。
-    \item 暂时可用 HTTP 验证首页资源是否正确加载。
-    \item 浏览器 F12 检查 HTML、JS、CSS 是否全部 200。
-  \end{enumerate}
-  \DAtagline{网站根目录}{只指向 \DAfile{dist/} 等生产构建产物}
-  \DAsource{宝塔官方文档 · 添加站点}{https://docs.bt.cn/user-guide/site/php/create-web}
-\end{frame}
-
-\begin{frame}[fragile]{6.6 SPA 刷新 404 怎么修}{让未知前端路由回到 index.html}
+\begin{frame}[fragile]{6.3 SPA 刷新 404 怎么修}{让未知前端路由回到 index.html}
   \begin{lstlisting}[language=bash]
 location / {
     try_files $uri $uri/ /index.html;
@@ -89,40 +40,39 @@ location / {
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{6.7 准备 FastAPI 生产环境}{服务器按锁文件创建独立虚拟环境}
-  \begin{lstlisting}[language=bash]
-cd /www/wwwroot/customer-service/backend
-
-uv sync --locked --no-dev
-uv run python -m pytest
-
-uv run fastapi run app/main.py \
-  --host 127.0.0.1 --port 8000 --proxy-headers
-  \end{lstlisting}
-  \begin{itemize}
-    \item 先前台启动并用 \DAcmd{curl http://127.0.0.1:8000/health} 验证。
-    \item 监听 \DAfile{127.0.0.1}，业务端口只允许本机 Nginx 访问。
-    \item 确认无误后再交给宝塔项目管理 / 应用管理器守护。
-  \end{itemize}
+\begin{frame}{6.4 FastAPI 在宝塔中的运行模型}{锁定依赖、仅本机监听、交给进程守护}
+  \begin{DAtable}{@{}p{31mm}p{86mm}@{}}
+    \toprule
+    关键点 & 生产环境含义 \\
+    \midrule
+    依赖 & 遵循 \DAfile{pyproject.toml} 与 \DAfile{uv.lock}，不临时升级版本 \\
+    启动入口 & 使用项目真实的 ASGI 入口与生产启动命令 \\
+    监听地址 & 监听 \DAfile{127.0.0.1:8000}，只允许本机 Nginx 访问 \\
+    健康检查 & 提供轻量 \DAfile{/health}，验证进程、依赖与必要连接 \\
+    运行身份 & 使用非 root 用户，并明确日志、上传目录的写权限 \\
+    进程生命周期 & 由宝塔项目管理器负责开机启动、异常重启与日志 \\
+    \bottomrule
+  \end{DAtable}
+  \DAtagline{两个阶段}{先证明应用能启动，再交给守护进程长期运行}
 \end{frame}
 
-\begin{frame}{6.8 FastAPI 进程守护}{SSH 断开后仍运行，异常后能重启}
+\begin{frame}{6.5 进程守护需要配置什么}{SSH 断开后仍运行，异常后能够恢复}
   \begin{DAtable*}{@{}p{31mm}p{84mm}@{}}
     \toprule
-    配置项 & 示例 \\
+    配置项 & 需要确认的内容 \\
     \midrule
-    项目目录 & \DAfile{/www/wwwroot/customer-service/backend} \\
-    Python 环境 & 项目 \DAfile{.venv} 中的 Python / FastAPI \\
-    启动命令 & 使用上一页命令，监听 \DAfile{127.0.0.1:8000} \\
-    运行用户 & 非 root，确保能读代码与写日志 / 上传目录 \\
+    工作目录 & 相对路径、配置文件和日志路径从哪里解析 \\
+    运行环境 & 使用项目自己的 Python 虚拟环境或 Node 版本 \\
+    启动命令 & 与项目脚本一致，端口不得和其他服务冲突 \\
+    运行用户 & 非 root，并具备必要的读取与写入权限 \\
     环境变量 & 通过面板项目配置或受控 Env 文件注入 \\
-    重启策略 & 开机启动、异常退出自动重启 \\
+    生命周期 & 开机启动、异常退出重启、停止超时与日志保留 \\
     \bottomrule
   \end{DAtable*}
   \DAtagline*{版本差异}{不同宝塔版本入口可能显示为 Python 项目、应用管理器或进程守护}
 \end{frame}
 
-\begin{frame}[fragile]{6.9 Nginx 把 /api 转给 FastAPI}{同域部署减少 CORS 与 Cookie 问题}
+\begin{frame}[fragile]{6.6 Nginx 把 /api 转给 FastAPI}{同域部署减少 CORS 与 Cookie 问题}
   \begin{lstlisting}[language=bash]
 location /api/ {
     proxy_pass http://127.0.0.1:8000/;
@@ -140,15 +90,15 @@ location /api/ {
   \DAsource{NGINX Docs · Reverse Proxy}{https://docs.nginx.com/nginx/admin-guide/web-server/reverse-proxy/}
 \end{frame}
 
-\begin{frame}{6.10 宝塔反向代理界面}{面板字段与 Nginx 配置一一对应}
+\begin{frame}{6.7 反向代理界面要看懂的字段}{面板字段最终都会变成 Nginx 配置}
   \begin{columns}[T]
     \begin{column}{0.42\textwidth}
       \begin{itemize}
-        \item 代理名称：\DAfile{fastapi-api}
-        \item 代理目录：\DAfile{/api/}
-        \item 目标 URL：\DAfile{http://127.0.0.1:8000}
-        \item 发送域名：通常使用 \DAfile{\$host}
-        \item API 默认关闭缓存
+        \item 代理目录决定哪些请求被匹配。
+        \item 目标 URL 指向本机应用端口。
+        \item Host 与转发头保留域名、协议和客户端信息。
+        \item API 通常关闭缓存；静态资源可单独配置缓存。
+        \item WebSocket / SSE 需要额外确认连接与超时设置。
       \end{itemize}
     \end{column}
     \begin{column}{0.54\textwidth}
@@ -159,7 +109,7 @@ location /api/ {
   \DAsource{宝塔官方文档 · 反向代理}{https://docs.bt.cn/user-guide/site/php/site-config/reverse-proxy}
 \end{frame}
 
-\begin{frame}{6.11 前后端联调的验证顺序}{后端、Nginx、浏览器逐层检查}
+\begin{frame}{6.8 前后端联调的验证顺序}{后端、Nginx、浏览器逐层检查}
   \begin{enumerate}
     \item \DAcmd{curl http://127.0.0.1:8000/health}：后端进程是否正常。
     \item \DAcmd{curl -i http://127.0.0.1/api/health}：Nginx 反代是否正常。
@@ -170,24 +120,23 @@ location /api/ {
   \DAtagline{定位法}{在哪一层第一次失败，问题就位于该层或它的下一跳}
 \end{frame}
 
-\begin{frame}[fragile]{6.12 Node.js 后端部署}{pnpm 构建 + PM2 / 宝塔 Node 项目守护}
-  \begin{lstlisting}[language=bash]
-cd /www/wwwroot/customer-service/server
-
-corepack enable
-pnpm install --frozen-lockfile
-pnpm build
-pnpm start
-  \end{lstlisting}
-  \begin{itemize}
-    \item Express / NestJS 等后端通常监听 \DAfile{127.0.0.1:3000}。
-    \item 宝塔 Node 项目管理默认可使用 PM2 做守护与自动重启。
-    \item Nginx 的目标 URL 改为 \DAfile{http://127.0.0.1:3000}，其他思路相同。
-  \end{itemize}
-  \DAsource{宝塔官方文档 · Node.js PM2 部署}{https://docs.bt.cn/practical-tutorials/nodejs-pm2-deployment}
+\begin{frame}{6.9 Node 后端与 FastAPI 的部署差异}{运行时不同，部署模型相同}
+  \begin{DAtable*}{@{}p{28mm}p{42mm}p{45mm}@{}}
+    \toprule
+    对比项 & Node 后端 & FastAPI 后端 \\
+    \midrule
+    依赖锁定 & \DAfile{pnpm-lock.yaml} & \DAfile{uv.lock} \\
+    构建阶段 & NestJS / TypeScript 常需构建 & 通常直接运行 Python 源码 \\
+    运行时 & Node.js + pnpm / PM2 & Python 虚拟环境 + ASGI Server \\
+    本机端口 & 常见 \DAfile{127.0.0.1:3000} & 常见 \DAfile{127.0.0.1:8000} \\
+    进程管理 & 宝塔 Node 项目 / PM2 & Python 项目 / 应用管理器 \\
+    公网入口 & \multicolumn{2}{l}{都由 Nginx 反向代理，不直接暴露业务端口} \\
+    \bottomrule
+  \end{DAtable*}
+  \DAtagline{共同模型}{锁定依赖 + 本机端口 + 进程守护 + Nginx 入口}
 \end{frame}
 
-\begin{frame}{6.13 宝塔 Node 项目配置示意}{项目路径、启动命令、端口和运行用户}
+\begin{frame}{6.10 Node 项目配置要认清的字段}{项目路径、启动命令、端口和运行用户}
   \begin{DAfigrow}
     \DAfigbox*{25mm}{assets/official/bt-node-project.png}{添加 Node 项目 · 宝塔官方}\hfill
     \DAfigbox*{25mm}{assets/official/bt-node-port.png}{配置启动端口 · 宝塔官方}
@@ -196,7 +145,7 @@ pnpm start
   \DAsource{宝塔官方文档 · Next.js 部署}{https://docs.bt.cn/practical-tutorials/nextjs-deployment}
 \end{frame}
 
-\begin{frame}{6.14 环境变量如何放到服务器}{仓库保存变量名，服务器保存真实值}
+\begin{frame}{6.11 环境变量如何放到服务器}{仓库保存变量名，服务器保存真实值}
   \begin{DAtable}{@{}p{35mm}p{82mm}@{}}
     \toprule
     类型 & 处理方式 \\
@@ -211,29 +160,22 @@ pnpm start
   \DAtagline{权限}{Env 文件只允许部署用户 / 运行用户读取，避免通过静态站点暴露}
 \end{frame}
 
-\begin{frame}[fragile]{6.15 宝塔手工更新顺序}{构建、备份、切换、验证}
-  \begin{lstlisting}[language=bash]
-cd /www/wwwroot/customer-service
-git fetch origin
-git switch main
-git pull --ff-only
-
-cd frontend
-pnpm install --frozen-lockfile
-pnpm build
-
-cd ../backend
-uv sync --locked --no-dev
-# run migrations, then restart backend in panel
-  \end{lstlisting}
-  \begin{itemize}
-    \item 更新前记录旧 Commit ID、备份数据库与上传文件。
-    \item 依赖、迁移、重启、健康检查必须按 SOP 执行。
-    \item 不在用户高峰期第一次尝试未知升级步骤。
-  \end{itemize}
+\begin{frame}{6.12 手工更新要守住四个坐标}{代码、依赖、数据与运行状态必须对应}
+  \begin{DAtable}{@{}p{29mm}p{88mm}@{}}
+    \toprule
+    坐标 & 更新时需要留下的证据 \\
+    \midrule
+    代码版本 & 更新前后的 Commit ID，确保能够切回旧版本 \\
+    依赖版本 & 使用锁文件安装，避免线上得到未经测试的新依赖 \\
+    数据状态 & 迁移前备份数据库与上传文件，确认迁移是否向后兼容 \\
+    构建产物 & 前端源码或构建变量变化后重新生成并替换静态产物 \\
+    运行状态 & 重启后检查 Health、关键接口、日志与资源使用 \\
+    \bottomrule
+  \end{DAtable}
+  \DAtagline{更新原则}{先准备回滚点，再更新；先验证服务，再结束发布}
 \end{frame}
 
-\begin{frame}{6.16 宝塔部署最常见的 502}{Nginx 找不到或无法连接上游服务}
+\begin{frame}{6.13 宝塔部署最常见的 502}{Nginx 找不到或无法连接上游服务}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{itemize}
