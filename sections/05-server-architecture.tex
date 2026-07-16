@@ -1,6 +1,6 @@
-\DAsection[公网入口、端口与部署路线]{服务器购买占位与部署架构}
+\DAsection[服务器配置、端口与部署路线]{服务器购买与部署架构}
 
-\begin{frame}{5.1 服务器购买 · 现场演示}{购买页由讲师现场操作}
+\begin{frame}{5.1 购买服务器}{选择地域、系统、配置与网络}
   \begin{columns}[T]
     \begin{column}{0.46\textwidth}
       \DAtagline{地域}{靠近用户；境内上线关注备案}
@@ -9,36 +9,23 @@
       \DAtagline{网络}{公网 IPv4、带宽、22 / 80 / 443}
     \end{column}
     \begin{column}{0.50\textwidth}
-      \DAfigureph[34mm]{现场演示：购买服务器\\记录公网 IP 与登录方式}
-      \DAtagline*{提醒}{在中国境内提供互联网信息服务，应依法判断备案 / 许可要求}
+      \begin{block}{购买后记录}
+        \small
+        \begin{itemize}
+          \setlength{\itemsep}{1mm}
+          \item 公网 IPv4、SSH 用户与密钥
+          \item 实例名称与到期时间
+          \item 云防火墙规则
+          \item 控制台重置与救援入口
+        \end{itemize}
+      \end{block}
+      {\scriptsize\textcolor{DARed}{\bfseries 提醒：}境内上线应依法判断备案或许可要求。}
     \end{column}
   \end{columns}
   \DAsource{工信部 · 非经营性互联网信息服务备案管理办法}{https://www.miit.gov.cn/api-gateway/jpaas-web-server/front/document/file-download?fileName=f1b8d119f55240b4813dd39360d2e0b0.pdf}
 \end{frame}
 
-\begin{frame}{5.2 公网请求路径}{DNS、Nginx、前端、API 与数据库}
-  \centering
-  \begin{tikzpicture}[node distance=2mm]
-    \node[DAflow,minimum width=18mm] (dns) {DNS\\域名解析};
-    \node[DAflow,minimum width=18mm,right=of dns] (firewall) {云防火墙\\80 / 443};
-    \node[DAflow,minimum width=18mm,right=of firewall] (nginx) {Nginx\\TLS};
-    \node[DAflow,minimum width=18mm,right=of nginx] (front) {前端\\静态 / SSR};
-    \node[DAflow,minimum width=18mm,right=of front] (api) {API\\127.0.0.1};
-    \node[DAstore,right=of api] (db) {MySQL};
-    \draw[DAarrowred] (dns) -- (firewall);
-    \draw[DAarrowred] (firewall) -- (nginx);
-    \draw[DAarrowred] (nginx) -- (front);
-    \draw[DAarrowred] (front) -- node[above,font=\tiny]{/api} (api);
-    \draw[DAarrow] (api) -- (db);
-  \end{tikzpicture}
-  \par\medskip
-  \begin{itemize}
-    \item 公网只开放必要入口；8000、3000、3306 留在本机或容器网络。
-    \item Nginx 负责域名、HTTPS、静态文件与反向代理。
-  \end{itemize}
-\end{frame}
-
-\begin{frame}{5.3 端口开放策略}{公网保留 22、80、443}
+\begin{frame}{5.2 端口开放策略}{公网保留 22、80、443}
   \begin{DAtable}{@{}p{19mm}p{37mm}p{67mm}@{}}
     \toprule
     端口 & 典型用途 & 建议 \\
@@ -54,7 +41,7 @@
   \DAsource{阿里云轻量应用服务器 · 防火墙}{https://help.aliyun.com/zh/simple-application-server/user-guide/manage-the-firewall-of-a-server}
 \end{frame}
 
-\begin{frame}{5.4 宝塔与 Docker 的分工}{可视化运维与可重复交付}
+\begin{frame}{5.3 宝塔与 Docker 的分工}{可视化运维与可重复交付}
   \begin{DAtable}{@{}p{24mm}p{47mm}p{48mm}@{}}
     \toprule
     维度 & 宝塔部署 & Docker 部署 \\

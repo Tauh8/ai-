@@ -71,7 +71,7 @@ git commit -m "docs: add Git workflow demo notes"
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{2.5 真实日志：本地 Commit 已创建}{仓库 Tauh8/ai- · Commit 0fd229a}
+\begin{frame}[fragile]{2.5 Commit 写入本地仓库}{Commit 0fd229a}
   \begin{lstlisting}[language=bash]
 $ git diff --cached --stat
  docs/git-demo-notes.md | 13 +++++++++++++
@@ -85,7 +85,7 @@ $ git commit -m "docs: add Git workflow demo notes"
   \DAtagline{此刻}{Commit 已存在于本地，GitHub 仍停留在上一个 Commit}
 \end{frame}
 
-\begin{frame}[fragile]{2.6 真实日志：Push 更新 GitHub}{Commit 是本地动作，Push 是网络动作}
+\begin{frame}[fragile]{2.6 Push 同步到 GitHub}{Commit 是本地动作，Push 是网络动作}
   \begin{columns}[T]
     \begin{column}{0.48\textwidth}
       \begin{block}{Push 前}
@@ -105,7 +105,6 @@ $ git log --oneline --decorate -2
       \begin{block}{Push 后}
         \begin{lstlisting}[language=bash]
 $ git push
-To ssh://ssh.github.com:443/Tauh8/ai-.git
  8ce893a..0fd229a  main -> main
 
 $ git status -sb
@@ -114,7 +113,6 @@ $ git status -sb
       \end{block}
     \end{column}
   \end{columns}
-  \DAtagline{在线仓库}{\DAfile{github.com/Tauh8/ai-}}
 \end{frame}
 
 \begin{frame}{2.7 好 Commit 的三个标准}{小、完整、能读懂}
@@ -133,7 +131,7 @@ $ git status -sb
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{2.8 真实历史：用 log 与 show 追踪变化}{仓库中已经存在 4 个真实 Commit}
+\begin{frame}[fragile]{2.8 用 log 与 show 追踪变化}{查看提交顺序、指针位置与文件变化}
   \begin{lstlisting}[language=bash]
 $ git log --oneline --decorate --graph -4
 * 0fd229a (HEAD -> main, origin/main)
