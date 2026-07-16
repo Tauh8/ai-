@@ -58,25 +58,66 @@ git remote -v
   \DAtagline{团队默认}{使用 Clone 获取完整历史与远程仓库配置}
 \end{frame}
 
-\begin{frame}[fragile]{2.4 一次最小提交循环}{先看状态，再选择，再提交}
+\begin{frame}[fragile]{2.4 一次最小提交循环：从 git add 开始}{选择文件、检查暂存区、创建本地 Commit}
   \begin{lstlisting}[language=bash]
-git status
-git diff
-
-git add src/pages/Login.tsx
-git add src/api/auth.ts
-git diff --staged
-
-git commit -m "feat(auth): connect login form to API"
+git add docs/git-demo-notes.md
+git diff --cached
+git commit -m "docs: add Git workflow demo notes"
   \end{lstlisting}
   \begin{itemize}
-    \item \DAcmd{git diff}：工作区与暂存区的差异。
-    \item \DAcmd{git diff --staged}：暂存区与上一次 Commit 的差异。
-    \item 提交前最后看一次 Diff，能拦住调试代码、密钥和无关格式化。
+    \item \DAcmd{git add} 选择本次提交包含的文件或代码块。
+    \item \DAcmd{git diff --cached} 检查即将提交的内容。
+    \item \DAcmd{git commit} 只写入本机仓库的 \DAfile{.git} 历史。
   \end{itemize}
 \end{frame}
 
-\begin{frame}{2.5 好 Commit 的三个标准}{小、完整、能读懂}
+\begin{frame}[fragile]{2.5 真实日志：本地 Commit 已创建}{仓库 Tauh8/ai- · Commit 0fd229a}
+  \begin{lstlisting}[language=bash]
+$ git diff --cached --stat
+ docs/git-demo-notes.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
+
+$ git commit -m "docs: add Git workflow demo notes"
+[main 0fd229a] docs: add Git workflow demo notes
+ 1 file changed, 13 insertions(+)
+ create mode 100644 docs/git-demo-notes.md
+  \end{lstlisting}
+  \DAtagline{此刻}{Commit 已存在于本地，GitHub 仍停留在上一个 Commit}
+\end{frame}
+
+\begin{frame}[fragile]{2.6 真实日志：Push 更新 GitHub}{Commit 是本地动作，Push 是网络动作}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Push 前}
+        \begin{lstlisting}[language=bash]
+$ git status -sb
+## main...origin/main [ahead 1]
+
+$ git log --oneline --decorate -2
+0fd229a (HEAD -> main) docs: add
+  Git workflow demo notes
+8ce893a (origin/main) feat: add
+  deployment and operations lessons
+        \end{lstlisting}
+      \end{block}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{block}{Push 后}
+        \begin{lstlisting}[language=bash]
+$ git push
+To ssh://ssh.github.com:443/Tauh8/ai-.git
+ 8ce893a..0fd229a  main -> main
+
+$ git status -sb
+## main...origin/main
+        \end{lstlisting}
+      \end{block}
+    \end{column}
+  \end{columns}
+  \DAtagline{在线仓库}{\DAfile{github.com/Tauh8/ai-}}
+\end{frame}
+
+\begin{frame}{2.7 好 Commit 的三个标准}{小、完整、能读懂}
   \begin{DAtable}{@{}p{25mm}p{44mm}p{54mm}@{}}
     \toprule
     标准 & 好例子 & 坏例子 \\
@@ -92,22 +133,27 @@ git commit -m "feat(auth): connect login form to API"
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{2.6 用 log 与 diff 读懂历史}{排错第一步：先知道发生过什么}
+\begin{frame}[fragile]{2.8 真实历史：用 log 与 show 追踪变化}{仓库中已经存在 4 个真实 Commit}
   \begin{lstlisting}[language=bash]
-git log --oneline --graph --decorate --all
-git show <commit>
-git diff main..feature/login
-git blame src/api/auth.ts
+$ git log --oneline --decorate --graph -4
+* 0fd229a (HEAD -> main, origin/main)
+  docs: add Git workflow demo notes
+* 8ce893a feat: add deployment and operations lessons
+* bef37be feat: add Git collaboration lessons
+* ab2afa2 chore: initialize Day 5 beamer project
+
+$ git show --stat 0fd229a
+ docs/git-demo-notes.md | 13 +++++++++++++
+ 1 file changed, 13 insertions(+)
   \end{lstlisting}
   \begin{itemize}
-    \item \DAcmd{git log --graph} 看分支关系，不只看提交列表。
-    \item \DAcmd{git show} 查看某次提交“为什么改、具体改了什么”。
-    \item \DAcmd{git blame} 用于寻找上下文，不用于追责。
+    \item \DAfile{HEAD -> main, origin/main} 表示本地与 GitHub 已对齐。
+    \item \DAcmd{git show 0fd229a} 查看某次提交的说明与完整 Diff。
+    \item \DAcmd{git diff ab2afa2..0fd229a} 比较两个历史节点。
   \end{itemize}
-  \DAtagline{AI 协作}{让 AI 修改前先提供当前 Diff；让 AI 修复后再审一遍 Diff}
 \end{frame}
 
-\begin{frame}{2.7 分支是什么}{指向某个 Commit 的可移动标签}
+\begin{frame}{2.9 分支是什么}{指向某个 Commit 的可移动标签}
   \centering
   \begin{tikzpicture}[x=18mm,y=8mm]
     \node[DAflow,minimum width=18mm] (c1) at (0,0) {C1};
@@ -131,7 +177,7 @@ git blame src/api/auth.ts
   \end{itemize}
 \end{frame}
 
-\begin{frame}[fragile]{2.8 分支的日常命令}{从最新 main 开始工作}
+\begin{frame}[fragile]{2.10 分支的日常命令}{从最新 main 开始工作}
   \begin{lstlisting}[language=bash]
 git switch main
 git pull --ff-only
@@ -149,33 +195,7 @@ git branch -d feature/login-api
   \end{itemize}
 \end{frame}
 
-\begin{frame}{2.9 本地仓库与远程仓库}{origin 是远程仓库的常用别名}
-  \centering
-  \begin{tikzpicture}[node distance=17mm]
-    \node[DAgroup] (localbox) {
-      \begin{tikzpicture}[node distance=4mm]
-        \node[DAflow,minimum width=28mm] (localmain) {local main};
-        \node[DAflow,minimum width=28mm,below=of localmain] (localfeat) {local feature};
-      \end{tikzpicture}
-    };
-    \node[DAgroup,right=of localbox] (remotebox) {
-      \begin{tikzpicture}[node distance=4mm]
-        \node[DAflow,minimum width=28mm] (originmain) {origin/main};
-        \node[DAflow,minimum width=28mm,below=of originmain] (originfeat) {origin/feature};
-      \end{tikzpicture}
-    };
-    \draw[DAarrowred] (localbox.east) -- node[above,font=\tiny]{push} (remotebox.west);
-    \draw[DAarrow] (remotebox.west) to[bend left=25] node[below,font=\tiny]{fetch / pull} (localbox.east);
-  \end{tikzpicture}
-  \par\medskip
-  \begin{itemize}
-    \item \DAcmd{git fetch} 只更新远程跟踪信息，不修改当前工作区。
-    \item \DAcmd{git pull} = fetch + 整合；团队应明确整合策略。
-    \item \DAcmd{git push -u origin feature/login-api} 首次推送并建立跟踪关系。
-  \end{itemize}
-\end{frame}
-
-\begin{frame}[fragile]{2.10 撤销操作：先判断“是否已经共享”}{公开历史优先 revert，未共享历史才考虑重写}
+\begin{frame}[fragile]{2.11 撤销操作：先判断“是否已经共享”}{公开历史优先 revert，未共享历史才考虑重写}
   \begin{DAtable*}{@{}p{29mm}p{45mm}p{47mm}@{}}
     \toprule
     场景 & 推荐命令 & 影响 \\

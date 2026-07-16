@@ -1,6 +1,8 @@
 # Day 5：Git 团队协作与全栈应用部署
 
-这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 114 个 PDF 页面、10 个章节。内容从 Git 本地模型和 GitHub Pull Request 工作流开始，依次讲解冲突处理、主分支治理、服务器部署架构、宝塔部署、Docker / Compose、Node 前端、FastAPI 后端、Node 后端、域名、反向代理、SSL 与上线运维。
+这套课件基于 DragonFDE LaTeX Beamer 模板制作，共 115 个 PDF 页面、10 个章节。内容从 Git 本地模型和 GitHub Pull Request 工作流开始，依次讲解冲突处理、主分支治理、服务器部署架构、宝塔部署、Docker / Compose、Node 前端、FastAPI 后端、Node 后端、域名、反向代理、SSL 与上线运维。
+
+Git 章节使用真实仓库 [Tauh8/ai-](https://github.com/Tauh8/ai-) 的命令输出。课堂演示提交为 `0fd229a`，课件展示了暂存区统计、本地 Commit 后的 `ahead 1` 状态、Push 输出以及本地与远程指针对齐过程。
 
 ## 两种输出
 
@@ -29,7 +31,7 @@ latexmk -xelatex -interaction=nonstopmode -halt-on-error main-ppt.tex
 9. 域名、反向代理与 SSL 证书
 10. 运维、排错、回滚与课堂实战
 
-服务器购买页按要求仅保留现场演示占位，位于 PDF 第 38 页（5.1）。
+服务器购买页按要求仅保留现场演示占位，位于 PDF 第 39 页（5.1）。
 
 ## 文件结构
 
@@ -53,7 +55,7 @@ check_figs.py            配图分辨率检查
 ## 质量检查
 
 - 放映版与 PPT 转换友好版均已通过 XeLaTeX 编译。
-- 两个版本均为 114 页、16:9。
+- 两个版本均为 115 页、16:9。
 - 编译日志无 Overfull 警告。
 - `python3 check_figs.py main.tex` 检查结果为“全部达标”。
 - 放映版已逐页渲染并完成接触表视觉检查。
