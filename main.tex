@@ -1,0 +1,28 @@
+% !TEX program = xelatex
+\documentclass[aspectratio=169,11pt,t]{beamer}
+\usetheme{dragonai}
+\input{common}
+
+\title{Day 5 · Git 团队协作\\与全栈应用部署}
+\subtitle{从分支、Pull Request 到宝塔、Docker、域名与 HTTPS}
+\author{Tauh}
+\institute{烛龙智元 · DragonAI}
+\date{Vibe Coding 10 天训练营 · 2026}
+\renewcommand{\DAauthorlabel}{主讲}
+\renewcommand{\DAcontact}{稳定交付，持续运行}
+
+\begin{document}
+\DAcover
+
+\begin{frame}{课程地图}
+  \begin{DAstatstack}[24mm]
+    \DAstatbox{Git 协作}{分支、Commit、Pull Request、Review、冲突与主分支治理}
+    \DAstatbox{宝塔部署}{服务器、Nginx、前端构建、FastAPI / Node 进程守护}
+    \DAstatbox{Docker}{Dockerfile、Compose、数据库、更新与回滚}
+    \DAstatbox{公网运维}{DNS、域名、反向代理、SSL、日志与故障定位}
+  \end{DAstatstack}
+\end{frame}
+
+\input{body}
+\DAclosing[交付完成]
+\end{document}

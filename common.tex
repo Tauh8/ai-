@@ -1,0 +1,91 @@
+% Shared preamble for the Day 5 presentation and PPT-friendly driver.
+\usepackage{amsmath,amssymb,tabularx,array,tikz,listings,xcolor}
+\usetikzlibrary{positioning,arrows.meta,calc,fit,shapes.geometric}
+
+% The template's Noto fallback can be misdetected by fontconfig on macOS.
+% Pin the installed system CJK families so Chinese glyphs are always embedded.
+\setCJKmainfont{Heiti SC}[AutoFakeBold=2]
+\setCJKsansfont{Heiti SC}[AutoFakeBold=2]
+\setCJKmonofont{Heiti SC}
+\newCJKfontfamily\DADaySerifCJK{Songti SC}[AutoFakeBold=2]
+\newfontfamily\DADaySerifLatin{Songti SC}[Ligatures=TeX]
+\renewcommand{\DAdisplay}{\DADaySerifLatin\DADaySerifCJK}
+
+\tikzset{
+  DAflow/.style={
+    draw=DARed,
+    rounded corners=.9mm,
+    minimum height=11mm,
+    align=center,
+    font=\scriptsize,
+    inner xsep=1.6mm,
+    fill=white
+  },
+  DAflowmuted/.style={
+    draw=DALine2,
+    rounded corners=.9mm,
+    minimum height=11mm,
+    align=center,
+    font=\scriptsize,
+    inner xsep=1.6mm,
+    fill=DAPaper2
+  },
+  DAarrow/.style={
+    -{Latex[length=2mm]},
+    draw=DAInk2,
+    line width=.45pt
+  },
+  DAarrowred/.style={
+    -{Latex[length=2mm]},
+    draw=DARed,
+    line width=.55pt
+  },
+  DAstore/.style={
+    cylinder,
+    shape border rotate=90,
+    aspect=.25,
+    draw=DARed,
+    minimum width=19mm,
+    minimum height=13mm,
+    align=center,
+    font=\scriptsize,
+    fill=white
+  },
+  DAgroup/.style={
+    draw=DALine2,
+    rounded corners=1mm,
+    inner sep=2mm
+  }
+}
+
+\lstdefinestyle{dacode}{
+  basicstyle=\ttfamily\fontsize{5.5}{6.3}\selectfont,
+  keywordstyle=\bfseries\color{DARed},
+  commentstyle=\itshape\color{DAInk3},
+  stringstyle=\color{DAInk2},
+  backgroundcolor=\color{DAPaper2},
+  rulecolor=\color{DALine2},
+  frame=single,
+  framerule=.35pt,
+  framesep=1.2mm,
+  xleftmargin=1mm,
+  xrightmargin=1mm,
+  aboveskip=1mm,
+  belowskip=1mm,
+  showstringspaces=false,
+  breaklines=true,
+  breakatwhitespace=false,
+  keepspaces=true,
+  columns=fullflexible,
+  upquote=true,
+  tabsize=2
+}
+\lstset{style=dacode}
+
+\newcommand{\DAcmd}[1]{{\ttfamily\color{DARed}#1}}
+\newcommand{\DAfile}[1]{{\ttfamily\color{DAInk2}#1}}
+\newcommand{\DAsource}[2]{%
+  \par\vspace{0.35mm}{\tiny\ttfamily\color{DAInk3}来源：\href{#2}{#1}}%
+}
+\newcommand{\DAcheck}{\textcolor{DARed}{\(\checkmark\)}}
+\newcommand{\DAcross}{\textcolor{DAInk3}{\(\times\)}}

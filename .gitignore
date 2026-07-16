@@ -1,0 +1,16 @@
+# LaTeX build artifacts
+*.aux
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.snm
+*.toc
+*.vrb
+*.xdv
+missfont.log
+
+# Local render and editor files
+tmp/
+.DS_Store

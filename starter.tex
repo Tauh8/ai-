@@ -1,0 +1,89 @@
+% !TEX program = xelatex
+% ============================================================
+% DragonAI Beamer 模板骨架(starter)—— 复制本文件,替换内容即可开写
+%
+% 编译:xelatex starter.tex  ×2(第二遍生成目录、总页数)
+% 交可编辑 PPT 时:把 \usetheme 行换成 \usetheme[ppt]{dragonai},
+%   另存一份编译,拿转出的 PDF 去转 PPT(详见《使用说明.md》第 7 节)
+%
+% 原则:本文件里只有内容和结构命令,没有一句排版代码;
+%   版式、间距、颜色、字体全部由主题接管,溢出了先删字再想别的。
+% ============================================================
+\documentclass[aspectratio=169,11pt,t]{beamer}
+\usetheme{dragonai}
+
+% ---------- 元信息:只改文字 ----------
+\title{在这里写标题\\需要断行用双反斜杠}
+\subtitle{在这里写副标题(不需要就整行删掉)}
+\author{在这里写姓名}
+\institute{单位(不需要就整行删掉)}
+\date{2026.07}
+
+\begin{document}
+
+\DAcover     % 封面(全自动)
+\DAtoc       % 目录(全自动;章节多时行距自动收紧)
+
+% ============ 第 1 章 ============
+\DAsection[一句给这章定调的话(红底语句,不需要可连方括号删掉)]{第一章标题}
+
+% ---- 要点页:frame{标题}{副标题},副标题可省 ----
+\begin{frame}{页标题}{页副标题(可删)}
+  \begin{itemize}
+    \item \textbf{要点一} —— 展开说明,行内强调用 \DAhot{红底强调}
+    \item \textbf{要点二} —— 需要二级要点就再嵌一层
+    \begin{itemize}
+      \item 二级要点
+    \end{itemize}
+  \end{itemize}
+  \DAtagline{落点}{一页的结论写在这里,比块版式省一半竖向空间}
+  \DAtagline*{备注}{注解性的尾行用星号版,文字自动弱化为灰}
+\end{frame}
+
+% ---- 双栏 + 图:左栏说话,右栏放证据 ----
+\begin{frame}{双栏页标题}
+  \begin{columns}[T]
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \item 左栏要点一
+        \item 左栏要点二
+      \end{itemize}
+      \medskip
+      \DAstatbox{-92\%}{红底数字 + 一句说明}
+    \end{column}
+    \begin{column}{0.50\textwidth}
+      \DAfigureph[37mm]{图占位:有真图后换成下一行的写法}
+      % \DAfigbox{37mm}{你的图.png}{图注(注明出处)}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+% ---- 图行页:多图并排,\hfill 均布;单图就只留一个,自动居中 ----
+\begin{frame}{图行页标题}
+  \begin{DAfigrow}
+    \DAfigureph[26mm][40mm]{图一占位}\hfill
+    \DAfigureph[26mm][40mm]{图二占位}
+    % 真图写法(尺寸只给高度,宽度随图):
+    % \DAfigbox{26mm}{a.png}{图注}\hfill \DAfigbox{26mm}{b.png}{图注}
+  \end{DAfigrow}
+  \DAtagline{看图说话}{图行下面配一句解读,别让听众自己猜}
+\end{frame}
+
+% ============ 第 2 章 ============
+\DAsection{第二章标题}
+
+% ---- 表格页:≤6 行用 DAtable;整页总表换 DAtable*(写法相同) ----
+\begin{frame}{表格页标题}{整页总表时,把表注写在这个副标题里}
+  \begin{DAtable}[表注(不需要可连方括号删掉)]{@{}lll@{}}
+    \toprule
+    列一 & 列二 & 列三 \\
+    \midrule
+    \DAtableno{01} & 第一行内容 & 说明 \\
+    \DAtableno{02} & 第二行内容 & 说明 \\
+    \bottomrule
+  \end{DAtable}
+\end{frame}
+
+\DAclosing[谢谢]   % 结尾(联系行想换就在导言区 \renewcommand{\DAcontact}{…})
+
+\end{document}

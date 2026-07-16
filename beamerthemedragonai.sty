@@ -1,0 +1,588 @@
+%% ============================================================
+%% beamerthemedragonai.sty · v3.2
+%% 烛龙智元 · DragonAI — 高级感 · 简约 Beamer 主题
+%% 纯白纸面 · 红底白字块级强调 · 衬线汉字标题 · 等宽字标注 · 16:9
+%% XeLaTeX (fontspec + xeCJK)
+%%
+%% ------------------------------------------------------------
+%% 像写论文一样:结构命令 + 内容,版式全部由主题接管。
+%% 作者只需要这些:
+%%
+%%   \usetheme{dragonai}            % 选项:warm / fakebold / logozone / ppt
+%%   \title{...}\subtitle{...}\author{...}\institute{...}\date{...}
+%%
+%%   \DAcover                       % 封面页
+%%   \DAtoc                         % 目录页(可 \DAtoc[大纲];行距随章节数自适应)
+%%   \DAsection[红底质感语句]{章节标题}
+%%   \begin{frame}{标题}{副标题} ... \end{frame}   % 正文页照常写
+%%   \DAclosing                     % 结尾页(可 \DAclosing[谢谢])
+%%
+%% 内容小件(全部单命令,不写任何版式代码):
+%%   \DAhot{7 个}              行内红底强调(色块不可断行,长句用 \\ 让它独占一行)
+%%   \DAtag{重点}              等宽小标签
+%%   \DAtagline{标签}{说明}      标签行(块的轻量替代;说明折行自动悬挂缩进;
+%%   \DAtagline*{标签}{说明}     星号 = 说明文字弱化为灰)
+%%   \DAstatbox{-92\%}{说明}   红底数据块(多块纵排用 DAstatstack 环境;
+%%                             环境可选参数 = 数字块统一宽度,说明列自动对齐)
+%%   \DAfigbox{20mm}{f.png}{图注}   素材图:细边框 + 等宽小图注(自然宽度)
+%%   \DAfigbox*{20mm}{f.png}{图注}  星号 = 图注折行并压进图宽(窄图长注用)
+%%   \begin{DAfigrow} 图盒 \hfill 图盒 \end{DAfigrow}   居中图行(单图即居中)
+%%   \DAframed{\includegraphics[width=76mm]{f.png}}     无图注素材的细线裱框
+%%   \DAfigureph{说明}         图占位框(可 \DAfigureph[高][宽]{...},宽默认整行)
+%%   \begin{DAtable}[表注]{@{}llrr@{}}  行... \end{DAtable}   三线表
+%%   \begin{DAtable*}[表注]{@{}llrr@{}} 行... \end{DAtable*}  紧凑三线表
+%%                             (行数多的总表用星号版,≤6 行用普通版)
+%%   \DAtablegroup[列数]{组标题}  总表组标题行(multicolumn 红衬线,默认 4 列)
+%%   \DAtableno{01}            总表红色等宽行号(补零两位)
+%%
+%% 可覆盖的配置:
+%%   \renewcommand{\DAbrandcn}{品牌中文}       全局中文字标(默认 烛龙智元)
+%%   \renewcommand{\DAbranden}{BRAND}           全局英文字标(默认 DRAGONAI)
+%%   \renewcommand{\DAchoptext}{品\\牌}         红章两行文字
+%%   \renewcommand{\DAlogofile}{your-logo.png}  标识文件(缺失自动隐藏)
+%%   \renewcommand{\DAfootbrand}{…}             页脚字样(默认由品牌拼出)
+%%   \renewcommand{\DAcontact}{…}               结尾页联系行
+%%   \renewcommand{\DAauthorlabel}{报告人} 等     封面元信息标签
+%%   \setlength{\DAcovertopskip}{4.5mm}         封面页眉行下移量
+%%   \setlength{\DAcoverlogoheight}{13mm}       封面龙标高度(自动光学对齐)
+%%
+%% v3.2 变更(自 v3.1):
+%%   · 页标题分隔线到正文零附加间距 —— 正文起点上移约 3mm,整页重心不再
+%%     偏下;呼吸位由列表 / 段落自身的顶距提供
+%%   · 随包新增 starter.tex 模板骨架与《使用说明.md》:复制骨架、替换内容
+%%     即可开写,像用会议论文模板一样
+%%   · \DAfigureph 增加第二个可选参数(宽度,默认整行):占位框可进
+%%     DAfigrow 并排,如 \DAfigureph[26mm][40mm]{...}
+%%
+%% v3.1 变更(自 v3.0,课件实战经验沉淀):
+%%   · 新选项 ppt:PPT 转换友好模式 —— 红底强调整套降级为红色粗体文字
+%%     (行内强调 / 标签 / 数据块 / 章节语句 / 结尾横幅)、微字去 LetterSpace
+%%     字距(字距特性会被转换器拆成逐字碎片)、素材图去边框、固定纯白底。
+%%     共享正文 + 两个 8 行驱动,即得「放映版 + 可编辑转换版」双成品
+%%   · 素材图组件 \DAfigbox / \DAfigbox*、图行 DAfigrow、细线裱框 \DAframed
+%%     入主题(此前需在文档序言自定义)
+%%   · 数据块纵排环境 DAstatstack;\DAtagline 说明折行自动悬挂缩进,
+%%     续行与说明起点对齐(此前折行顶破左缘)
+%%   · 目录行距按章节总数自适应(≤4 疏朗 / 5–6 收紧 / ≥7 紧凑),两遍
+%%     编译后生效,多章文稿无需再手工覆写 section in toc 模板
+%%   · 新长度 \DAcontentwidth = 正文有效宽度(默认边距下 132mm,配图算宽用)
+%% ============================================================
+
+\NeedsTeXFormat{LaTeX2e}
+\ProvidesPackage{beamerthemedragonai}[2026/07/12 v3.2 DragonAI beamer theme]
+
+%% ---------- 基础依赖与引擎检查 ----------
+\RequirePackage{iftex}
+\ifxetex\else
+  \PackageError{beamerthemedragonai}
+    {本主题依赖 fontspec + xeCJK,请使用 XeLaTeX 编译}
+    {Compile with: xelatex your-file.tex}
+\fi
+\RequirePackage{fontspec}
+\RequirePackage{xeCJK}
+\RequirePackage{graphicx}
+\RequirePackage{booktabs}
+\RequirePackage{etoolbox}
+
+\mode<presentation>
+
+%% ============================================================
+%% 1 · 选项
+%% ============================================================
+\newif\ifDA@warm    \DA@warmfalse
+\newif\ifDA@fakebold\DA@fakeboldfalse
+\newif\ifDA@logozone\DA@logozonefalse
+\newif\ifDA@ppt     \DA@pptfalse
+\DeclareOptionBeamer{warm}{\DA@warmtrue}
+\DeclareOptionBeamer{white}{\DA@warmfalse}% 兼容旧选项:默认已是纯白
+\DeclareOptionBeamer{fakebold}{\DA@fakeboldtrue}
+\DeclareOptionBeamer{logozone}{\DA@logozonetrue}% 恢复内页右上标识区(v2.2 行为)
+\DeclareOptionBeamer{ppt}{\DA@ppttrue}% PPT 转换友好:红底强调降级为红字、去字距、纯白底
+\ProcessOptionsBeamer
+\ifDA@ppt\DA@warmfalse\fi% ppt 版固定纯白底(转换后底色应是页面属性而非色块)
+
+%% ============================================================
+%% 2 · 色彩(与 colors_and_type.css 一致)
+%% ============================================================
+\ifDA@warm
+  \definecolor{DAPaper}{HTML}{FAF7F2}
+\else
+  \definecolor{DAPaper}{HTML}{FFFFFF}
+\fi
+\definecolor{DAPaperWarm}{HTML}{FAF7F2}% 红底上的「纸色」文字
+\definecolor{DAPaper2}{HTML}{F3EEE6}
+\definecolor{DAPaper3}{HTML}{EAE3D8}
+\definecolor{DAInk}{HTML}{2B2B2B}
+\definecolor{DAInk2}{HTML}{5C5C5C}
+\definecolor{DAInk3}{HTML}{8A8580}
+\definecolor{DALine}{HTML}{E4DED3}
+\definecolor{DALine2}{HTML}{D4CCBE}
+\definecolor{DARed}{HTML}{A8201A}
+\definecolor{DARedDeep}{HTML}{7A1714}
+\definecolor{DAOrange}{HTML}{E94E1B}
+
+\setbeamercolor{normal text}{fg=DAInk,bg=DAPaper}
+\setbeamercolor{structure}{fg=DARed}
+\setbeamercolor{alerted text}{fg=DARed}
+\setbeamercolor{example text}{fg=DAInk2}
+\setbeamercolor{title}{fg=DAInk}
+\setbeamercolor{subtitle}{fg=DAInk2}
+\setbeamercolor{frametitle}{fg=DAInk,bg=}
+\setbeamercolor{framesubtitle}{fg=DAInk2}
+\setbeamercolor{section in toc}{fg=DAInk}
+\setbeamercolor{caption name}{fg=DARed}
+\setbeamercolor{background canvas}{bg=DAPaper}
+
+%% ============================================================
+%% 3 · 字体
+%%   汉字:Noto Serif SC(标题)/ Noto Sans SC(正文与等宽回退)
+%%   拉丁:Inter;等宽:JetBrains Mono
+%%   Google 版与 CJK 版字体名自动回退;缺失时静默退到系统字体。
+%% ============================================================
+\IfFontExistsTF{Noto Serif SC}%
+  {\edef\DA@serifname{Noto Serif SC}}%
+  {\edef\DA@serifname{Noto Serif CJK SC}}
+\IfFontExistsTF{Noto Sans SC}%
+  {\edef\DA@sansname{Noto Sans SC}}%
+  {\edef\DA@sansname{Noto Sans CJK SC}}
+
+\IfFontExistsTF{Avenir Next}{\setsansfont{Avenir Next}}{%
+  \IfFontExistsTF{Inter}{\setsansfont{Inter}}{}}
+\IfFontExistsTF{JetBrains Mono}%
+  {\setmonofont{JetBrains Mono}[Scale=0.92]}%
+  {\IfFontExistsTF{Menlo}{\setmonofont{Menlo}[Scale=0.92]}{}}
+
+% 正文汉字(无衬线);等宽场景的汉字同用无衬线(并消除 \CJKttdefault 警告)
+% 两个 Noto 变体都缺时静默跳过(留 xeCJK 默认),不中断编译
+\IfFontExistsTF{\DA@sansname}{%
+  \edef\DA@tmp{\noexpand\setCJKsansfont{\DA@sansname}}\DA@tmp
+  \edef\DA@tmp{\noexpand\setCJKmainfont{\DA@sansname}}\DA@tmp
+  \edef\DA@tmp{\noexpand\setCJKmonofont{\DA@sansname}}\DA@tmp
+}{}
+
+% 展示字型:汉字与拉丁一并切换到衬线(标题 / 序号 / 引言);
+% 衬线字体整族缺失时退化为空指令(标题落回正文字体),同样不中断编译
+\IfFontExistsTF{\DA@serifname}{%
+  \ifDA@fakebold
+    \edef\DA@tmp{\noexpand\newCJKfontfamily\noexpand\DAserifCJK{\DA@serifname}[Ligatures=TeX,AutoFakeBold={2.2}]}\DA@tmp
+    \edef\DA@tmp{\noexpand\newfontfamily\noexpand\DAserifLatin{\DA@serifname}[Ligatures=TeX,AutoFakeBold={2.2}]}\DA@tmp
+  \else
+    \edef\DA@tmp{\noexpand\newCJKfontfamily\noexpand\DAserifCJK{\DA@serifname}[Ligatures=TeX,BoldFont={\DA@serifname\space Bold}]}\DA@tmp
+    \edef\DA@tmp{\noexpand\newfontfamily\noexpand\DAserifLatin{\DA@serifname}[Ligatures=TeX,BoldFont={\DA@serifname\space Bold}]}\DA@tmp
+  \fi
+}{\newcommand{\DAserifCJK}{}\newcommand{\DAserifLatin}{}}
+\newcommand{\DAdisplay}{\DAserifLatin\DAserifCJK}
+
+\usefonttheme{professionalfonts}
+\setbeamerfont{title}{size={\fontsize{29}{34}},series=\bfseries}
+\setbeamerfont{subtitle}{size={\fontsize{12}{18}},series=\mdseries}
+\setbeamerfont{frametitle}{size={\fontsize{18.5}{23}},series=\bfseries}
+\setbeamerfont{framesubtitle}{size=\footnotesize,series=\mdseries}
+
+%% ============================================================
+%% 4 · 品牌配置与部件(全部可单独复用)
+%% ============================================================
+%% ---------- 品牌配置:换品牌只改这四行 ----------
+\newcommand{\DAbrandcn}{烛龙智元}
+\newcommand{\DAbranden}{DRAGONAI}
+\newcommand{\DAchoptext}{烛龙\\智元}
+\newcommand{\DAlogofile}{logo-dragonai-full-cutout.png}
+
+%% ---------- 版面尺寸旋钮 ----------
+\newlength{\DAcovertopskip}\setlength{\DAcovertopskip}{4.5mm}%   封面页眉行下移量
+\newlength{\DAcoverlogoheight}\setlength{\DAcoverlogoheight}{13mm}% 封面龙标高度
+
+%% 红色菱形(旋转方块,呼应低多边形棱面)
+\newcommand{\DAdiamond}[1][0.28em]{%
+  \textcolor{DARed}{\raisebox{0.08em}{\rotatebox[origin=c]{45}{\rule{#1}{#1}}}}}
+
+%% 微字标注(等宽 · 加宽字距);\DA@mic{} 为常用的「弱灰微字」内部简写
+%% ppt 模式去 LetterSpace:字距特性会让 PDF→PPT 转换器把文本拆成逐字碎片
+\ifDA@ppt
+  \newcommand{\DAmicro}{\ttfamily\fontsize{5.5}{7}\selectfont}
+\else
+  \newcommand{\DAmicro}{\ttfamily\fontsize{5.5}{7}\selectfont\addfontfeature{LetterSpace=14}}
+\fi
+\newcommand{\DA@mic}[1]{{\DAmicro\color{DAInk3}#1}}
+
+%% 眉头:◆ SECTION · 01
+\ifDA@ppt
+  \newcommand{\DAeyebrow}[1]{%
+    {\DAdiamond[0.36em]\hskip 0.8em
+     {\ttfamily\fontsize{6.5}{8}\selectfont\color{DARed}#1}}}
+\else
+  \newcommand{\DAeyebrow}[1]{%
+    {\DAdiamond[0.36em]\hskip 0.8em
+     {\ttfamily\fontsize{6.5}{8}\selectfont\addfontfeature{LetterSpace=18}\color{DARed}#1}}}
+\fi
+
+%% 标题上方的红色小横杠(36×3 比例)
+\newcommand{\DAbar}{{\color{DARed}\rule{4.5mm}{0.33mm}}}
+
+%% 红章(印章式字标,文字经 \DAchoptext 配置)
+\newcommand{\DAchop}[1][9mm]{%
+  {\setlength{\fboxsep}{2mm}\colorbox{DARed}{\parbox{#1}{\centering
+    {\DAdisplay\bfseries\fontsize{10.5}{12.5}\selectfont\color{DAPaperWarm}\DAchoptext}}}}}
+
+%% 遥测刻度线(细线 + 五个红刻度,可替代素细线)
+\newcommand{\DA@tick}{{\color{DARed}\vrule width 0.5pt height 3.6pt}}
+\newcommand{\DAtelemetry}{%
+  \vbox{\hbox to \hsize{\DA@tick\hfill\DA@tick\hfill\DA@tick\hfill\DA@tick\hfill\DA@tick}%
+    \nointerlineskip{\color{DALine}\hrule height 0.5pt}}}
+
+%% 标识底板:白底印章式(文件缺失时自动隐藏,不报错)
+\newcommand{\DAlogoplate}[1][6.5mm]{%
+  {\setlength{\fboxsep}{1.6mm}\colorbox{white}{\IfFileExists{\DAlogofile}%
+    {\includegraphics[height=#1]{\DAlogofile}}{}}}}
+
+%% 正式标识区:标识 + 竖细线 + 中英文字标
+%% v3.0 起内页默认不渲染(选项 logozone 恢复);命令保留,可在自定页面复用
+\newcommand{\DAlogozone}{%
+  \hbox{\IfFileExists{\DAlogofile}{%
+      \raisebox{-2.4mm}{\includegraphics[height=7mm]{\DAlogofile}}\hskip 2.4mm
+      \raisebox{-2.2mm}{{\color{DALine}\vrule width 0.5pt height 5.4mm}}\hskip 2.4mm}{}%
+    \vbox{\hbox{{\DAdisplay\bfseries\fontsize{10}{11}\selectfont\color{DAInk}\DAbrandcn}}\vskip 1.1mm
+      \hbox{\DA@mic{\DAbranden}}}}}
+%% 内页标识槽:各模板统一从这里取,受 logozone 选项控制
+\newcommand{\DA@logoslot}{\ifDA@logozone\DAlogozone\fi}
+
+%% ============================================================
+%% 5 · 红底白字组件与内容小件(小面积使用)
+%% ============================================================
+%% ppt 模式:红底白字全部降级为红色粗体文字 —— PDF 规范无「字符底色」概念,
+%% 色块必然转成「矩形 + 文字」两个对象;降级后转出即是单个可编辑文本,
+%% 需要高亮时在 PowerPoint 里用原生「文本突出显示」一键补回
+%% 数据块说明折行同样悬挂缩进(续行与说明起点对齐);
+%% 数字部分经 \DA@statnum:DAstatstack 给了对齐宽度时统一定宽居中,否则自然宽度
+\newlength{\DA@statw}
+\newcommand{\DA@statnum}[1]{%
+  \ifdim\DA@statw>0pt\makebox[\DA@statw][c]{#1}\else#1\fi}
+\ifDA@ppt
+  \newcommand{\DAtag}[1]{{\scriptsize\bfseries\color{DARed}【#1】}}
+  \newcommand{\DAhot}[1]{{\bfseries\color{DARed}#1}}
+  \newcommand{\DAstatbox}[2]{%
+    \settowidth{\@tempdima}{{\fontsize{13}{15}\selectfont\bfseries\color{DARed}\DA@statnum{#1}}\hskip 0.9em}%
+    \leavevmode\hangindent\@tempdima\hangafter 1
+    {\fontsize{13}{15}\selectfont\bfseries\color{DARed}\DA@statnum{#1}}\hskip 0.9em{\small\color{DAInk2}#2}}
+\else
+  \newcommand{\DAtag}[1]{%
+    {\setlength{\fboxsep}{0.42em}%
+     \colorbox{DARed}{\color{DAPaperWarm}\ttfamily\fontsize{6.5}{8}\selectfont\addfontfeature{LetterSpace=14}#1}}}
+  \newcommand{\DAhot}[1]{%
+    {\setlength{\fboxsep}{0.22em}\colorbox{DARed}{\color{DAPaperWarm}#1}}}
+  \newcommand{\DAstatbox}[2]{%
+    \settowidth{\@tempdima}{{\setlength{\fboxsep}{0.6em}%
+      \colorbox{DARed}{\ttfamily\fontsize{13}{15}\selectfont\color{DAPaperWarm}\DA@statnum{#1}}}\hskip 0.9em}%
+    \leavevmode\hangindent\@tempdima\hangafter 1
+    {\setlength{\fboxsep}{0.6em}%
+      \colorbox{DARed}{\ttfamily\fontsize{13}{15}\selectfont\color{DAPaperWarm}\DA@statnum{#1}}}\hskip 0.9em{\small\color{DAInk2}#2}}
+\fi
+
+%% 数据块纵排:\begin{DAstatstack} \DAstatbox{}{} \DAstatbox{}{} \end{DAstatstack}
+%% 块间距自动;窄栏里多个数据块一律纵排(并排必挤压说明文字)
+\newif\ifDA@statfirst
+\newenvironment{DAstatstack}[1][0pt]{%
+  \par\setlength{\DA@statw}{#1}\DA@statfirsttrue
+  \let\DA@statboxorig\DAstatbox
+  \renewcommand{\DAstatbox}[2]{%
+    \ifDA@statfirst\DA@statfirstfalse\else\par\vskip 2.6mm\fi
+    \DA@statboxorig{##1}{##2}}%
+}{\par}
+
+%% 标签行:\DAtagline{标签}{说明} —— 红 tag + 说明,块版式的轻量替代
+%%         \DAtagline*{...}{...} 说明文字弱化为灰(适合注解性尾行)
+%% 说明折行时自动悬挂缩进:续行与说明文字起点对齐,不会顶破左缘
+\newcommand{\DA@tagline}[3]{\par\vskip 1.8mm
+  {\settowidth{\@tempdima}{\DAtag{#2}\hskip 0.9em}%
+   \noindent\hangindent\@tempdima\hangafter 1
+   \DAtag{#2}\hskip 0.9em{\small\color{#1}#3}\par}}
+\newcommand{\DA@taglineink}{\DA@tagline{DAInk}}
+\newcommand{\DA@taglinemut}{\DA@tagline{DAInk2}}
+\newcommand{\DAtagline}{\@ifstar{\DA@taglinemut}{\DA@taglineink}}
+
+%% 图占位框:\DAfigureph[高度][宽度]{说明}(交付时整体替换为 \DAfigbox)
+%% 宽度默认整行;进 DAfigrow 并排时给第二个可选参数,如 [26mm][38mm]
+\NewDocumentCommand{\DAfigureph}{O{46mm} O{\linewidth} m}{%
+  {\setlength{\fboxsep}{0pt}%
+   \textcolor{DALine2}{\fbox{\parbox[c][#1][c]{\dimexpr#2-0.9pt\relax}{%
+     \centering{\ttfamily\small\textcolor{DAInk3}{#3}}}}}}}
+
+%% 细线裱框:\DAframed{\includegraphics[width=76mm]{...}}(无图注素材直贴;
+%% ppt 模式去框,转出即裸图片对象)
+\ifDA@ppt
+  \newcommand{\DAframed}[1]{{#1}}
+\else
+  \newcommand{\DAframed}[1]{%
+    {\setlength{\fboxsep}{0pt}\textcolor{DALine2}{\fbox{#1}}}}
+\fi
+
+%% 素材图:\DAfigbox{高}{文件}{图注} —— 细边框 + 等宽小图注,盒子取自然宽度
+%%   (图注不折行;图注明显宽于图时整盒随之变宽,排紧凑图行请用星号版)
+%% \DAfigbox*{高}{文件}{图注} —— 图注折行并压进图宽,窄图长注不撑盒
+%% 展示尺寸用高度控制,多图并排时基线自然齐平;位图分辨率见 check_figs.py 门禁
+\newsavebox{\DA@figimgbox}
+\newcommand{\DA@figcap}{\ttfamily\scriptsize\color{DAInk3}}
+\newcommand{\DA@figimg}[2]{\DAframed{\includegraphics[height=#1]{#2}}}
+\newcommand{\DA@figboxnat}[3]{%
+  \begin{tabular}[t]{@{}c@{}}
+    \DA@figimg{#1}{#2}\\[0.8mm]
+    {\DA@figcap #3}%
+  \end{tabular}}
+\newcommand{\DA@figboxfit}[3]{%
+  \sbox{\DA@figimgbox}{\DA@figimg{#1}{#2}}%
+  \begin{tabular}[t]{@{}c@{}}
+    \usebox{\DA@figimgbox}\\[0.8mm]
+    {\DA@figcap\parbox[t]{\wd\DA@figimgbox}{\centering #3}}%
+  \end{tabular}}
+\newcommand{\DAfigbox}{\@ifstar{\DA@figboxfit}{\DA@figboxnat}}
+
+%% 图行:\begin{DAfigrow} \DAfigbox{...}\hfill\DAfigbox{...} \end{DAfigrow}
+%% 单图 = 居中;多图以 \hfill 均布(总宽勿超 \DAcontentwidth,否则先缩高度)
+\newenvironment{DAfigrow}{\par\begingroup\centering}{\par\endgroup}
+
+%% 三线表:\begin{DAtable}[表注]{@{}llrr@{}} 行... \end{DAtable}
+%%   普通版 \small × 1.2,适合 ≤6 行;紧凑版 DAtable* \scriptsize × 1.0,
+%%   适合整页总表(10 行量级)。居中 / 字号 / 行距均已预设。
+%% 总表范式 helper:组标题行 \DAtablegroup[列数]{第一阶段 · …}(默认 4 列)
+%% 与红色等宽行号 \DAtableno{01}(补零两位)——分组总表不再手写主题内部风格
+%% 注意:\DAtablegroup 处在表格行首,必须可展开(\multicolumn 的 \omit 要求
+%% 对齐扫描期就位),带可选参数的 \newcommand 是 \protected 的、会炸,
+%% 故用内核 \NewExpandableDocumentCommand
+\NewExpandableDocumentCommand{\DAtablegroup}{O{4}m}{%
+  \multicolumn{#1}{@{}l@{}}{{\DAdisplay\bfseries\color{DARed}#2}}}
+\newcommand{\DAtableno}[1]{{\ttfamily\color{DARed}#1}}
+
+\newenvironment{DAtable}[2][]{%
+  \def\DA@tabcaption{#1}%
+  \begin{table}\centering\small
+  \setlength{\tabcolsep}{5pt}%
+  \renewcommand{\arraystretch}{1.2}%
+  \begin{tabular}{#2}}{%
+  \end{tabular}%
+  \ifdefempty{\DA@tabcaption}{}{\caption{\DA@tabcaption}}%
+  \end{table}}
+\newenvironment{DAtable*}[2][]{%
+  \def\DA@tabcaption{#1}%
+  \vskip -2mm
+  \begin{table}\centering\scriptsize
+  \setlength{\tabcolsep}{5pt}%
+  \renewcommand{\arraystretch}{1.0}%
+  \begin{tabular}{#2}}{%
+  \end{tabular}%
+  \ifdefempty{\DA@tabcaption}{}{\caption{\DA@tabcaption}}%
+  \end{table}}
+
+%% ---------- 可覆盖的文案(默认由品牌配置拼出) ----------
+\newcommand{\DAfootbrand}{\DAbrandcn\ · \DAbranden}
+\newcommand{\DAtitletag}{\DAbranden\ · \DAbrandcn}
+\newcommand{\DAcontact}{HELLO@DRAGONAI.CN · DRAGONAI.CN}
+\newcommand{\DAauthorlabel}{报告人}
+\newcommand{\DAinstitutelabel}{单位}
+\newcommand{\DAdatelabel}{日期}
+%% 章节质感语句(通常经 \DAsection 的可选参数设置;渲染后自动清空)
+\newcommand{\DAsectionstatement}{}
+
+%% ============================================================
+%% 6 · 版面模板
+%% ============================================================
+\setbeamersize{text margin left=14mm,text margin right=14mm}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{headline}{}
+\setlength{\leftmargini}{1.15em}
+\setlength{\leftmarginii}{1.3em}
+
+%% 正文有效宽度(16:9 默认边距下 = 132mm)—— columns 配图算宽用它,别按纸宽估
+\newlength{\DAcontentwidth}
+\AtBeginDocument{\setlength{\DAcontentwidth}{\textwidth}}
+
+%% ---------- 封面 ----------
+%% 页眉行下移 \DAcovertopskip;龙标高 \DAcoverlogoheight 并按高度光学对齐
+%% (作者自设 \titlegraphic 时按原样放置,仅做基线微调)
+\newcommand{\DA@metacell}[2]{\vtop{\hbox{\DA@mic{#1}}\vskip 1.4mm\hbox{{\small #2}}}}
+\setbeamertemplate{title page}{%
+  \vbox to 0.88\textheight{%
+    \vskip\DAcovertopskip
+    \hbox to \hsize{%
+      \raisebox{-1mm}{\DAeyebrow{\DAtitletag}}%
+      \hfil
+      \ifdefempty{\inserttitlegraphic}%
+        {\IfFileExists{\DAlogofile}%
+          {\raisebox{\dimexpr-0.48\DAcoverlogoheight\relax}%
+            {\includegraphics[height=\DAcoverlogoheight]{\DAlogofile}}}{}}%
+        {\raisebox{-2mm}{\inserttitlegraphic}}}%
+    \vskip 0pt plus 1fill
+    \DAbar\par\vskip 3mm
+    {\usebeamerfont{title}\usebeamercolor[fg]{title}\DAdisplay\inserttitle\par}%
+    \ifdefempty{\insertsubtitle}{}{%
+      \vskip 2.8mm
+      {\usebeamerfont{subtitle}\color{DAInk2}\insertsubtitle\par}}%
+    \vskip 0pt plus 1.35fill
+    {\color{DALine}\hrule height 0.5pt}%
+    \vskip 3mm
+    \hbox to \hsize{%
+      \DA@metacell{\DAauthorlabel}{\insertauthor}%
+      \ifdefempty{\insertinstitute}{}{%
+        \hskip 14mm\DA@metacell{\DAinstitutelabel}{\insertinstitute}}%
+      \hfil
+      \DA@metacell{\DAdatelabel}{\insertdate}}%
+  }%
+}
+
+%% ---------- 页标题(左:红杠 + 衬线标题,自动换行;右:标识槽) ----------
+%% 标题宽度随标识槽开关自适应:无标识时标题可用整行
+\setbeamertemplate{frametitle}{%
+  \vskip 6mm
+  \hbox to \hsize{%
+    \vbox{\hbox{\DAbar}\vskip 1.8mm
+      \hbox{\parbox[b]{\ifDA@logozone\dimexpr\hsize-44mm\relax\else\hsize\fi}{\raggedright
+        \usebeamerfont{frametitle}\usebeamercolor[fg]{frametitle}\DAdisplay\insertframetitle}}}%
+    \hfil\ifDA@logozone\raisebox{0.6mm}{\DA@logoslot}\fi}%
+  \ifdefempty{\insertframesubtitle}{}{%
+    \vskip 1.2mm
+    {\usebeamerfont{framesubtitle}\usebeamercolor[fg]{framesubtitle}\insertframesubtitle\par}}%
+  \vskip 2.6mm
+  {\color{DALine2}\hrule height 0.5pt}%
+  % 分隔线到正文零附加间距(2026-07-12 用户拍板 3mm→1.5mm→0:正文起点尽量上移,
+  % 视觉呼吸位由列表/段落自身的顶部间距提供)
+}
+
+%% ---------- 页脚 ----------
+\setbeamertemplate{footline}{%
+  \hbox to \paperwidth{\hskip 14mm
+    \vbox{%
+      {\color{DALine}\hrule height 0.5pt width \dimexpr\paperwidth-28mm\relax}%
+      \vskip 2.2mm
+      \hbox to \dimexpr\paperwidth-28mm\relax{%
+        \DA@mic{\DAfootbrand}\hfil
+        {\DAmicro\color{DARed}\two@digits{\c@framenumber}}%
+        \DA@mic{\ /\ \two@digits{\inserttotalframenumber}}}%
+      \vskip 3mm}%
+    \hskip 14mm}}
+
+%% ---------- 章节页(白底 + 大号红色序号 + 质感语句;序号自动补零) ----------
+\AtBeginSection[]{%
+  \begin{frame}[plain,noframenumbering]%
+    \vbox to \textheight{%
+      \vskip 4mm
+      \hbox to \hsize{\raisebox{-1.5mm}{\DAeyebrow{SECTION\ ·\ \two@digits{\c@section}}}\hfil\DA@logoslot}%
+      \vskip 0pt plus 1fill
+      {\DAdisplay\bfseries\fontsize{42}{44}\selectfont\color{DARed}\two@digits{\c@section}\par}%
+      \vskip 4mm
+      {\DAdisplay\bfseries\fontsize{21}{27}\selectfont\color{DAInk}\insertsection\par}%
+      \ifdefempty{\DAsectionstatement}{}{%
+        \vskip 3.2mm
+        \ifDA@ppt
+          {\DAdisplay\fontsize{13}{16}\selectfont\bfseries\color{DARed}\DAsectionstatement\par}%
+        \else
+          {\setlength{\fboxsep}{0.55em}\colorbox{DARed}{{\DAdisplay\fontsize{12}{15}\selectfont\color{DAPaperWarm}\DAsectionstatement}}\par}%
+        \fi}%
+      \vskip 0pt plus 1.4fill
+      {\color{DALine}\hrule height 0.5pt}%
+      \vskip 2.4mm
+      \hbox to \hsize{\DA@mic{SECTION \two@digits{\c@section}}\hfil
+        \DA@mic{\DAfootbrand}}%
+    }%
+  \end{frame}%
+  \global\let\DAsectionstatement\@empty}
+
+%% ---------- 目录(行距按章节总数自适应,经 .aux 回读,两遍编译后生效) ----------
+%% ≤4 章疏朗(3.4mm)/ 5–6 章收紧(2.1mm)/ ≥7 章紧凑(1.4mm + 字号降半级)
+\newcommand{\DA@tocsections}{4}
+\AtEndDocument{\immediate\write\@mainaux{%
+  \string\gdef\string\DA@tocsections{\the\c@section}}}
+\newcommand{\DA@tocsep}{3.4mm}
+\newcommand{\DA@tocfont}{\large}
+\newcommand{\DA@tocsetup}{%
+  \ifnum\DA@tocsections>6
+    \renewcommand{\DA@tocsep}{1.4mm}\renewcommand{\DA@tocfont}{\normalsize}%
+  \else\ifnum\DA@tocsections>4
+    \renewcommand{\DA@tocsep}{2.1mm}%
+  \fi\fi}
+\setbeamertemplate{section in toc}{%
+  \leavevmode
+  {\ttfamily\small\color{DARed}\two@digits{\inserttocsectionnumber}}\hskip 1.3em
+  {\DAdisplay\DA@tocfont\color{DAInk}\inserttocsection}\par
+  \vskip\DA@tocsep{\color{DALine}\hrule height 0.5pt}\vskip\DA@tocsep}
+\setbeamertemplate{subsection in toc}{}
+
+%% ---------- 列表 ----------
+\setbeamertemplate{itemize item}{\DAdiamond}
+\setbeamertemplate{itemize subitem}{\textcolor{DAInk3}{\rule[0.55ex]{0.9em}{0.5pt}}}
+\setbeamertemplate{enumerate item}{{\ttfamily\textcolor{DARed}{\insertenumlabel.}}}
+\setbeamertemplate{itemize/enumerate body begin}{\setlength{\itemsep}{2.6mm}}
+\setbeamertemplate{itemize/enumerate subbody begin}{\setlength{\itemsep}{1.6mm}}
+
+%% ---------- 块(定理 / 强调 / 示例)—— 无底色,细线制版 ----------
+\setbeamertemplate{block begin}{%
+  \par\vskip 3mm
+  {\DAdiamond[0.26em]\hskip 0.6em
+   {\DAdisplay\bfseries\small\color{DARed}\insertblocktitle}\par}%
+  \vskip 1.8mm
+  {\color{DALine2}\hrule height 0.5pt}%
+  \vskip 2.6mm}
+\setbeamertemplate{block end}{\par\vskip 3mm}
+
+\setbeamertemplate{block alerted begin}{%
+  \par\vskip 3mm
+  {\DAtag{\insertblocktitle}\par}%
+  \vskip 2.4mm}
+\setbeamertemplate{block alerted end}{\par\vskip 3mm}
+
+\setbeamertemplate{block example begin}{%
+  \par\vskip 3mm
+  {\DAdisplay\bfseries\small\color{DAInk2}\insertblocktitle\par}%
+  \vskip 1.8mm
+  {\color{DALine2}\hrule height 0.5pt}%
+  \vskip 2.6mm}
+\setbeamertemplate{block example end}{\par\vskip 3mm}
+
+%% ---------- 图表标注 ----------
+\def\figurename{图}
+\def\tablename{表}
+\setbeamertemplate{caption}{%
+  {\DAmicro\color{DARed}\insertcaptionname~\insertcaptionnumber}%
+  \hskip 0.9em
+  {\footnotesize\color{DAInk2}\insertcaption}}
+
+%% ============================================================
+%% 7 · 作者 API(整页命令)
+%% ============================================================
+%% 封面页
+\newcommand{\DAcover}{\begin{frame}[plain]\titlepage\end{frame}}
+
+%% 目录页:\DAtoc 或 \DAtoc[大纲](行距按章节总数自适应)
+\newcommand{\DAtoc}[1][目录]{%
+  \begin{frame}{#1}\DA@tocsetup\vskip 3mm\tableofcontents\end{frame}}
+
+%% 章节页:\DAsection{标题} 或 \DAsection[红底质感语句]{标题}
+\newcommand{\DAsection}[2][]{%
+  \renewcommand{\DAsectionstatement}{#1}\section{#2}}
+
+%% 结尾页:\DAclosing 或 \DAclosing[谢谢聆听];联系行经 \DAcontact 覆盖
+\newcommand{\DAclosingpage}[2]{%
+  \begin{frame}[plain,noframenumbering]%
+    \vbox to \textheight{%
+      \hbox to \hsize{\hfil\DA@logoslot}%
+      \vskip 0pt plus 1fill
+      \ifDA@ppt
+        {\DAdisplay\bfseries\fontsize{26}{32}\selectfont\color{DARed}#1\par}%
+      \else
+        {\setlength{\fboxsep}{3mm}\colorbox{DARed}{\DAdisplay\bfseries\fontsize{26}{32}\selectfont\color{DAPaperWarm}#1}\par}%
+      \fi
+      \vskip 4.5mm
+      \DA@mic{#2}\par
+      \vskip 0pt plus 1.3fill
+      {\color{DALine}\hrule height 0.5pt}%
+      \vskip 2.4mm
+      \hbox to \hsize{\DA@mic{\DAfootbrand}\hfil\DA@mic{\the\year}}%
+    }%
+  \end{frame}}
+\newcommand{\DAclosing}[1][谢谢]{\DAclosingpage{#1}{\DAcontact}}
+
+%% ============================================================
+%% 8 · 文档级预设(在主题加载时生效,序言区可直接覆盖)
+%% ============================================================
+\renewcommand{\arraystretch}{1.5}% booktabs 三线表默认行距
+\hypersetup{colorlinks=true,linkcolor=DAInk,urlcolor=DARed,citecolor=DAInk2}
+
+\mode<all>
